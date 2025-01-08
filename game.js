@@ -312,7 +312,7 @@ class SnakeGame {
                     this.score++;
                     this.completedGreetings.push(this.greetingsData[this.currentGreetingIndex].meaning);
                     
-                    // �示完成動畫（會自動暫停遊戲）
+                    // 示完成動畫（會自動暫停遊戲）
                     this.showCompletionAnimation(this.currentWords);
                     
                     setTimeout(() => {
@@ -554,7 +554,8 @@ class SnakeGame {
     // 顯示收集到的字
     showCollectedWord(word, index) {
         const element = this.collectedWordsElements[index];
-        element.textContent = word;
+        const span = element.querySelector('span');
+        span.textContent = word;
         element.classList.remove('bounce');
         // 觸發重排以重新開始動畫
         void element.offsetWidth;
@@ -564,7 +565,8 @@ class SnakeGame {
     // 清空收集的字
     clearCollectedWords() {
         this.collectedWordsElements.forEach(element => {
-            element.textContent = '';
+            const span = element.querySelector('span');
+            span.textContent = '';
             element.classList.remove('bounce');
         });
     }
@@ -577,7 +579,7 @@ class SnakeGame {
         // 設置完成的詞組
         phrase.textContent = words.join('');
         
-        // 顯示彈出視窗�暫停遊戲
+        // 顯示彈出視窗暫停遊戲
         popup.classList.remove('hidden');
         void popup.offsetWidth;
         popup.classList.add('show');
@@ -597,7 +599,7 @@ class SnakeGame {
         document.addEventListener('click', closePopup);
     }
 
-    // 添加暫停遊�方法
+    // 添加暫停遊戲方法
     pauseGame() {
         if (!this.isGameOver && !this.isPaused) {
             this.isPaused = true;
