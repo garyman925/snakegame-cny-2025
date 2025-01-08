@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成語貪吃蛇</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <!-- <div class="word-sequence">
+                目標順序：<span id="wordSequence"></span>
+            </div> -->
+            <div class="current-target">
+                當前目標：<span id="currentTarget"></span>
+            </div>
+            <div class="timer">剩餘時間：<span id="timer">1:00</span></div>
+            <div class="score">分數：<span id="score">0</span></div>
+        </div>
+        
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="gameResult" class="game-result hidden">
+            <h2>遊戲結束</h2>
+            <p>最終得分：<span id="finalScore">0</span></p>
+            <div class="completed-words">
+                <h3>完成的祝賀詞：</h3>
+                <p id="completedWordsList">未能完成任何祝賀詞</p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="startButton">開始遊戲</button>
+            <div class="mobile-controls">
+                <button id="upButton">↑</button>
+                <div class="horizontal-controls">
+                    <button id="leftButton">←</button>
+                    <button id="rightButton">→</button>
+                </div>
+                <button id="downButton">↓</button>
+            </div>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
