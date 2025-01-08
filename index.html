@@ -2,26 +2,29 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>成語貪吃蛇</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
-</head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900&display=swap" rel="stylesheet"></head>
+<link rel="stylesheet" href="styles.css">
 <body>
     <div class="game-container">
         <div class="game-header">
             <!-- <div class="word-sequence">
                 目標順序：<span id="wordSequence"></span>
             </div> -->
-            <div class="current-target">
-                當前目標：<span id="currentTarget"></span>
-            </div>
             <div class="timer">剩餘時間：<span id="timer">1:00</span></div>
             <div class="score">分數：<span id="score">0</span></div>
         </div>
         
+        <div class="collected-words">
+            <div id="word0" class="collected-word"></div>
+            <div id="word1" class="collected-word"></div>
+            <div id="word2" class="collected-word"></div>
+            <div id="word3" class="collected-word"></div>
+        </div>
+
         <canvas id="gameCanvas"></canvas>
         
         <div id="gameResult" class="game-result hidden">
@@ -31,6 +34,11 @@
                 <h3>完成的祝賀詞：</h3>
                 <p id="completedWordsList">未能完成任何祝賀詞</p>
             </div>
+        </div>
+
+        <div id="completionPopup" class="completion-popup hidden">
+            <img src="img/big-snake.png" alt="祝賀" class="celebration-image">
+            <div class="completed-phrase"></div>
         </div>
 
         <div class="controls">

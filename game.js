@@ -2,9 +2,23 @@ class SnakeGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        this.canvas.width = 1200;
-        this.canvas.height = 600;
         
+        // 初始化圖片加載狀態
+        this.imagesLoaded = false;
+        
+        // 加載所有圖片
+        this.loadImages().then(() => {
+            this.imagesLoaded = true;
+            // 設置全屏
+            this.resizeCanvas();
+            // 監聽視窗大小變化
+            window.addEventListener('resize', () => this.resizeCanvas());
+            
+            this.setupEventListeners();
+            this.updateWordDisplay();
+            this.drawInitialScreen();
+        });
+
         this.gridSize = 40;
         this.snake = [];
         this.direction = 'right';
@@ -18,18 +32,6 @@ class SnakeGame {
         this.numberOfDecoys = 3;
         this.decoyFoods = [];
 
-        // 加載圖片
-        this.headImage = new Image();
-        this.bodyImage = new Image();
-        this.headImage.src = 'img/head.png';
-        this.bodyImage.src = 'img/body.png';
-
-        // 加載地板貼圖
-        this.floorImage1 = new Image();
-        this.floorImage2 = new Image();
-        this.floorImage1.src = 'img/floor-1.png';
-        this.floorImage2.src = 'img/floor-2.png';
-
         // 添加計時相關的屬性
         this.gameTime = 60; // 60秒
         this.remainingTime = this.gameTime;
@@ -39,22 +41,53 @@ class SnakeGame {
         // 添加結果顯示相關的屬性
         this.resultElement = document.getElementById('gameResult');
 
-        // 確保所有圖片都加載完成
-        Promise.all([
-            new Promise(resolve => this.headImage.onload = resolve),
-            new Promise(resolve => this.bodyImage.onload = resolve),
-            new Promise(resolve => this.floorImage1.onload = resolve),
-            new Promise(resolve => this.floorImage2.onload = resolve)
-        ]).then(() => {
-            this.setupEventListeners();
-            this.updateWordDisplay();
-            this.drawInitialScreen();
-        }).catch(error => {
-            console.error('圖片加載失敗:', error);
+        // 添加一個標記來追蹤已經吃掉的食物
+        this.foodEaten = false;
+
+        // 加載祝賀詞數據
+        this.loadWordsData();
+        
+        // 當前祝賀詞組索引
+        this.currentGreetingIndex = 0;
+        // 當前字詞組
+        this.currentWords = [];
+        // 已完成的祝賀詞
+        this.completedGreetings = [];
+
+        // 初始化收集的字詞顯示
+        this.collectedWordsElements = Array.from({length: 4}, (_, i) => 
+            document.getElementById(`word${i}`));
+
+        // 添加暫停狀態
+        this.isPaused = false;
+
+        // 添加暫停前的剩餘時間
+        this.pausedTimeRemaining = null;
+    }
+
+    // 添加圖片加載方法
+    async loadImages() {
+        // 加載圖片
+        this.headImage = await this.loadImage('img/head.png');
+        this.bodyImage = await this.loadImage('img/body.png');
+        this.floorImage1 = await this.loadImage('img/floor-1.png');
+        this.floorImage2 = await this.loadImage('img/floor-2.png');
+    }
+
+    // 輔助方法：加載單個圖片
+    loadImage(src) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = src;
         });
     }
 
     drawInitialScreen() {
+        // 確保圖片已加載
+        if (!this.imagesLoaded) return;
+
         // 繪製地板作為背景
         this.drawFloor();
         
@@ -94,19 +127,31 @@ class SnakeGame {
 
         // 隱藏結果顯示
         this.hideGameResult();
+
+        this.foodEaten = false; // 重置食物狀態
+
+        this.currentGreetingIndex = 0;
+        this.currentWordIndex = 0;
+        this.completedGreetings = [];
+        this.selectNextGreeting();
+
+        this.clearCollectedWords();
     }
 
     spawnFood() {
         let x, y;
+        const maxX = Math.floor(this.canvas.width / this.gridSize);
+        const maxY = Math.floor(this.canvas.height / this.gridSize);
+        
         do {
-            x = Math.floor(Math.random() * (this.canvas.width / this.gridSize));
-            y = Math.floor(Math.random() * (this.canvas.height / this.gridSize));
+            x = Math.floor(Math.random() * maxX);
+            y = Math.floor(Math.random() * maxY);
         } while (this.snake.some(segment => segment.x === x && segment.y === y));
 
         this.food = {
             x: x,
             y: y,
-            word: this.words[this.currentWordIndex]
+            word: this.currentWords[this.currentWordIndex]
         };
 
         this.decoyFoods = [];
@@ -123,8 +168,9 @@ class SnakeGame {
 
             let decoyWord;
             do {
-                decoyWord = this.words[Math.floor(Math.random() * this.words.length)];
-            } while (decoyWord === this.words[this.currentWordIndex]);
+                const randomGreeting = this.greetingsData[Math.floor(Math.random() * this.greetingsData.length)];
+                decoyWord = randomGreeting.words[Math.floor(Math.random() * randomGreeting.words.length)];
+            } while (decoyWord === this.currentWords[this.currentWordIndex]);
 
             this.decoyFoods.push({
                 x: dx,
@@ -135,8 +181,8 @@ class SnakeGame {
     }
 
     updateWordDisplay() {
-        document.getElementById('wordSequence').textContent = this.words.join(' → ');
-        document.getElementById('currentTarget').textContent = this.words[this.currentWordIndex];
+        // 移除目標顯示的更新
+        // 如果之後需要在其他地方使用這個方法，可以保留但不更新 DOM
     }
 
     updateScore() {
@@ -144,6 +190,9 @@ class SnakeGame {
     }
 
     draw() {
+        // 確保圖片已加載
+        if (!this.imagesLoaded) return;
+
         // 首先繪製地板
         this.drawFloor();
         
@@ -196,7 +245,8 @@ class SnakeGame {
             }
         });
 
-        if (this.food) {
+        // 只在食物沒有被吃掉時繪製食物
+        if (this.food && !this.foodEaten) {
             this.ctx.fillStyle = '#ffd600';
             this.ctx.font = '24px Arial';
             this.ctx.textAlign = 'center';
@@ -207,6 +257,7 @@ class SnakeGame {
             );
         }
 
+        // 繪製干擾食物
         this.ctx.fillStyle = '#fff';
         this.decoyFoods.forEach(decoy => {
             this.ctx.font = '24px Arial';
@@ -228,8 +279,8 @@ class SnakeGame {
             case 'right': head.x++; break;
         }
 
-        const maxX = this.canvas.width / this.gridSize;
-        const maxY = this.canvas.height / this.gridSize;
+        const maxX = Math.floor(this.canvas.width / this.gridSize);
+        const maxY = Math.floor(this.canvas.height / this.gridSize);
 
         if (head.x < 0) {
             head.x = maxX - 1;
@@ -250,18 +301,46 @@ class SnakeGame {
 
         this.snake.unshift(head);
 
-        if (head.x === this.food.x && head.y === this.food.y) {
-            this.score++;
-            // 記錄完成的詞
-            this.completedWords.push(this.words[this.currentWordIndex]);
-            this.currentWordIndex = (this.currentWordIndex + 1) % this.words.length;
-            this.updateScore();
-            this.updateWordDisplay();
-            this.spawnFood();
+        if (head.x === this.food.x && head.y === this.food.y && !this.foodEaten) {
+            this.foodEaten = true;
+            
+            if (this.food.word === this.currentWords[this.currentWordIndex]) {
+                this.showCollectedWord(this.food.word, this.currentWordIndex);
+                this.currentWordIndex++;
+                
+                if (this.currentWordIndex >= this.currentWords.length) {
+                    this.score++;
+                    this.completedGreetings.push(this.greetingsData[this.currentGreetingIndex].meaning);
+                    
+                    // �示完成動畫（會自動暫停遊戲）
+                    this.showCompletionAnimation(this.currentWords);
+                    
+                    setTimeout(() => {
+                        this.clearCollectedWords();
+                    }, 3000);
+                    
+                    this.currentGreetingIndex = (this.currentGreetingIndex + 1) % this.greetingsData.length;
+                    this.currentWordIndex = 0;
+                    this.selectNextGreeting();
+                }
+                
+                this.updateScore();
+                this.updateWordDisplay();
+            } else {
+                // 收集錯誤，清空已收集的字
+                this.clearCollectedWords();
+                this.currentWordIndex = 0;
+                this.updateWordDisplay();
+            }
+            
+            setTimeout(() => {
+                this.foodEaten = false;
+                this.spawnFood();
+            }, 200);
         } else if (this.decoyFoods.some(decoy => decoy.x === head.x && decoy.y === head.y)) {
             this.score = 0;
             this.currentWordIndex = 0;
-            this.completedWords = []; // 清空完成的詞
+            this.completedWords = [];
             this.updateScore();
             this.updateWordDisplay();
             this.spawnFood();
@@ -313,6 +392,13 @@ class SnakeGame {
                         this.gameOver();
                     }
                     break;
+                // 添加 'P' 鍵作為測試彈出視窗的快捷鍵
+                case 'p':
+                case 'P':
+                    if (!this.isGameOver) {
+                        this.showCompletionAnimation(['龍', '馬', '精', '神']);
+                    }
+                    break;
             }
         });
 
@@ -360,8 +446,8 @@ class SnakeGame {
         document.getElementById('finalScore').textContent = this.score;
         
         const completedWordsList = document.getElementById('completedWordsList');
-        if (this.completedWords.length > 0) {
-            completedWordsList.textContent = this.completedWords.join('、');
+        if (this.completedGreetings.length > 0) {
+            completedWordsList.textContent = this.completedGreetings.join('、');
         } else {
             completedWordsList.textContent = '未能完成任何祝賀詞';
         }
@@ -376,13 +462,15 @@ class SnakeGame {
 
     // 添加繪製地板的方法
     drawFloor() {
-        const tileSize = this.gridSize; // 使用與遊戲網格相同的大小
+        // 確保圖片已加載
+        if (!this.imagesLoaded) return;
+
+        const tileSize = this.gridSize;
         const numTilesX = Math.ceil(this.canvas.width / tileSize);
         const numTilesY = Math.ceil(this.canvas.height / tileSize);
 
         for (let y = 0; y < numTilesY; y++) {
             for (let x = 0; x < numTilesX; x++) {
-                // 交替使用兩種地板貼圖
                 const currentTile = (x + y) % 2 === 0 ? this.floorImage1 : this.floorImage2;
                 this.ctx.drawImage(
                     currentTile,
@@ -397,7 +485,7 @@ class SnakeGame {
 
     // 添加繪製網格的方法（可選，幫助玩家更清楚地看到移動單位）
     drawGrid() {
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0)';
         this.ctx.lineWidth = 1;
 
         // 繪製垂直線
@@ -414,6 +502,121 @@ class SnakeGame {
             this.ctx.moveTo(0, y);
             this.ctx.lineTo(this.canvas.width, y);
             this.ctx.stroke();
+        }
+    }
+
+    // 添加調整畫布大小的方法
+    resizeCanvas() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        
+        // 重新計算網格大小以適應屏幕
+        const minDimension = Math.min(this.canvas.width, this.canvas.height);
+        this.gridSize = Math.floor(minDimension / 20);
+        
+        // 只在圖片加載完成後重繪
+        if (this.imagesLoaded) {
+            if (!this.isGameOver) {
+                this.draw();
+            } else {
+                this.drawInitialScreen();
+            }
+        }
+    }
+
+    // 加載祝賀詞數據
+    async loadWordsData() {
+        try {
+            const response = await fetch('words.json');
+            const data = await response.json();
+            this.greetingsData = data.greetings;
+            this.selectNextGreeting();
+        } catch (error) {
+            console.error('加載祝賀詞數據失敗:', error);
+            // 使用默認數據
+            this.greetingsData = [{
+                words: ['龍', '馬', '精', '神'],
+                meaning: '龍馬精神'
+            }];
+            this.selectNextGreeting();
+        }
+    }
+
+    // 選擇下一組祝賀詞
+    selectNextGreeting() {
+        const greeting = this.greetingsData[this.currentGreetingIndex];
+        this.words = greeting.words;
+        this.currentWords = [...greeting.words];
+        this.currentWordIndex = 0;
+        this.updateWordDisplay();
+    }
+
+    // 顯示收集到的字
+    showCollectedWord(word, index) {
+        const element = this.collectedWordsElements[index];
+        element.textContent = word;
+        element.classList.remove('bounce');
+        // 觸發重排以重新開始動畫
+        void element.offsetWidth;
+        element.classList.add('bounce');
+    }
+
+    // 清空收集的字
+    clearCollectedWords() {
+        this.collectedWordsElements.forEach(element => {
+            element.textContent = '';
+            element.classList.remove('bounce');
+        });
+    }
+
+    // 顯示完成動畫
+    showCompletionAnimation(words) {
+        const popup = document.getElementById('completionPopup');
+        const phrase = popup.querySelector('.completed-phrase');
+        
+        // 設置完成的詞組
+        phrase.textContent = words.join('');
+        
+        // 顯示彈出視窗�暫停遊戲
+        popup.classList.remove('hidden');
+        void popup.offsetWidth;
+        popup.classList.add('show');
+        this.pauseGame();
+
+        // 添加點擊事件來關閉彈出視窗
+        const closePopup = () => {
+            popup.classList.remove('show');
+            popup.classList.add('hidden');
+            this.resumeGame();
+            
+            // 移除事件監聽器
+            document.removeEventListener('click', closePopup);
+        };
+
+        // 添加點擊事件來關閉彈出視窗
+        document.addEventListener('click', closePopup);
+    }
+
+    // 添加暫停遊�方法
+    pauseGame() {
+        if (!this.isGameOver && !this.isPaused) {
+            this.isPaused = true;
+            clearInterval(this.gameLoop);
+            clearInterval(this.timer);
+            this.pausedTimeRemaining = this.remainingTime;
+        }
+    }
+
+    // 添加恢復遊戲方法
+    resumeGame() {
+        if (!this.isGameOver && this.isPaused) {
+            this.isPaused = false;
+            this.gameLoop = setInterval(() => {
+                this.move();
+                this.draw();
+            }, 200);
+            this.timer = setInterval(() => this.updateTimer(), 1000);
+            this.remainingTime = this.pausedTimeRemaining;
         }
     }
 }

@@ -5,46 +5,54 @@
 }
 
 body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+    overflow: hidden; /* 防止滾動條出現 */
     background-color: #ebfcff;
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: "LXGW WenKai Mono TC", serif;
+    font-weight: 400;
+    font-style: normal;
 }
 
 .game-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
-    padding: 20px;
-    max-width: 100%;
-    overflow-x: auto;
 }
 
 .game-header {
-    text-align: center;
-    font-size: 1.2em;
+    position: fixed;
+    top: 20px;
+    left: 0;
+    width: 100%;
+    padding: 10px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    font-family: 'Noto Sans TC', sans-serif;
+    gap: 20px;
+    z-index: 1;
+    background: transparent;
 }
 
 #gameCanvas {
-    border: 1px solid transparent;
-    background-color: transparent;
-    max-width: 100%;
-    height: auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 0;
 }
 
 .controls {
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 15px;
+    z-index: 1;
 }
 
 #startButton {
@@ -140,6 +148,82 @@ body {
 
 .game-result .completed-words {
     margin-top: 15px;
+}
+
+.hidden {
+    display: none;
+}
+
+.collected-words {
+    position: relative;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 2;
+}
+
+.collected-word {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #f00;
+    opacity: 0;
+    transform: scale(0);
+}
+
+.collected-word.bounce {
+    animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.2);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.completion-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    background: rgba(255, 255, 255, 0.95);
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    z-index: 1000;
+    transition: transform 0.3s ease;
+}
+
+.completion-popup.show {
+    transform: translate(-50%, -50%) scale(1);
+    animation: popBounce 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.completion-popup .celebration-image {
+    width: 200px;
+    height: auto;
+    margin-bottom: 20px;
+}
+
+.completion-popup .completed-phrase {
+    font-size: 48px;
+    color: #ff0000;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes popBounce {
+    0% { transform: translate(-50%, -50%) scale(0); }
+    50% { transform: translate(-50%, -50%) scale(1.2); }
+    100% { transform: translate(-50%, -50%) scale(1); }
 }
 
 .hidden {
