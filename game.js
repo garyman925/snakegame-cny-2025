@@ -63,6 +63,43 @@ class SnakeGame {
 
         // 添加暫停前的剩餘時間
         this.pausedTimeRemaining = null;
+
+        // 在初始化時添加這些變量
+        let timerBar;
+        let timerText;
+
+        // 在遊戲開始時添加
+        function initGame() {
+            // ... 現有的初始化代碼 ...
+            timerBar = document.querySelector('.timer-bar');
+            timerText = document.querySelector('.timer-text');
+        }
+
+        // 修改更新時間的函數
+        function updateTimer() {
+            if (this.remainingTime > 0) {
+                this.remainingTime--;
+                // 更新新的計時器顯示
+                const timerText = document.querySelector('.timer-text');
+                const timerBar = document.querySelector('.timer-bar');
+                
+                if (timerText && timerBar) {
+                    timerText.textContent = this.remainingTime;
+                    const percentage = (this.remainingTime / this.gameTime) * 100;
+                    timerBar.style.width = `${percentage}%`;
+                }
+
+                // 當時間少於 10 秒時添加警告效果
+                if (this.remainingTime <= 10) {
+                    timerText.classList.add('warning');
+                    timerBar.classList.add('warning');
+                }
+
+                if (this.remainingTime <= 0) {
+                    this.timeUp();
+                }
+            }
+        }
     }
 
     // 添加圖片加載方法
@@ -113,7 +150,6 @@ class SnakeGame {
         this.currentWordIndex = 0;
         this.isGameOver = false;
         this.spawnFood();
-        this.updateScore();
         this.remainingTime = this.gameTime;
         this.completedWords = [];
         
@@ -186,7 +222,8 @@ class SnakeGame {
     }
 
     updateScore() {
-        document.getElementById('score').textContent = this.score;
+        // 由於我們已經移除了分數顯示，這個方法可以暫時保持空白
+        // 或者完全移除這個方法的調用
     }
 
     draw() {
@@ -247,8 +284,9 @@ class SnakeGame {
 
         // 只在食物沒有被吃掉時繪製食物
         if (this.food && !this.foodEaten) {
-            this.ctx.fillStyle = '#ffd600';
-            this.ctx.font = '24px Arial';
+            this.ctx.fillStyle = '#000';
+            this.ctx.font = '35px Noto Sans TC';
+            this.ctx.fontWeight = 'bold';
             this.ctx.textAlign = 'center';
             this.ctx.fillText(
                 this.food.word,
@@ -258,9 +296,10 @@ class SnakeGame {
         }
 
         // 繪製干擾食物
-        this.ctx.fillStyle = '#fff';
+        this.ctx.fillStyle = '#000';
         this.decoyFoods.forEach(decoy => {
-            this.ctx.font = '24px Arial';
+            this.ctx.font = '35px Noto Sans TC';
+            this.ctx.fontWeight = 'bold';
             this.ctx.fillText(
                 decoy.word,
                 decoy.x * this.gridSize + this.gridSize/2,
@@ -312,7 +351,6 @@ class SnakeGame {
                     this.score++;
                     this.completedGreetings.push(this.greetingsData[this.currentGreetingIndex].meaning);
                     
-                    // 示完成動畫（會自動暫停遊戲）
                     this.showCompletionAnimation(this.currentWords);
                     
                     setTimeout(() => {
@@ -324,10 +362,8 @@ class SnakeGame {
                     this.selectNextGreeting();
                 }
                 
-                this.updateScore();
                 this.updateWordDisplay();
             } else {
-                // 收集錯誤，清空已收集的字
                 this.clearCollectedWords();
                 this.currentWordIndex = 0;
                 this.updateWordDisplay();
@@ -418,15 +454,27 @@ class SnakeGame {
 
     // 添加計時器更新方法
     updateTimer() {
-        this.remainingTime--;
-        // 更新顯示
-        const minutes = Math.floor(this.remainingTime / 60);
-        const seconds = this.remainingTime % 60;
-        document.getElementById('timer').textContent = 
-            `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        if (this.remainingTime > 0) {
+            this.remainingTime--;
+            // 更新新的計時器顯示
+            const timerText = document.querySelector('.timer-text');
+            const timerBar = document.querySelector('.timer-bar');
+            
+            if (timerText && timerBar) {
+                timerText.textContent = this.remainingTime;
+                const percentage = (this.remainingTime / this.gameTime) * 100;
+                timerBar.style.width = `${percentage}%`;
+            }
 
-        if (this.remainingTime <= 0) {
-            this.timeUp();
+            // 當時間少於 10 秒時添加警告效果
+            if (this.remainingTime <= 10) {
+                timerText.classList.add('warning');
+                timerBar.classList.add('warning');
+            }
+
+            if (this.remainingTime <= 0) {
+                this.timeUp();
+            }
         }
     }
 
