@@ -284,9 +284,21 @@ class SnakeGame {
 
         // 只在食物沒有被吃掉時繪製食物
         if (this.food && !this.foodEaten) {
-            this.ctx.fillStyle = '#000';
-            this.ctx.font = '35px Noto Sans TC';
-            this.ctx.fontWeight = 'bold';
+            // 繪製菱形背景
+            this.ctx.save();
+            this.ctx.translate(
+                this.food.x * this.gridSize + this.gridSize/2,
+                this.food.y * this.gridSize + this.gridSize/2
+            );
+            this.ctx.rotate(Math.PI / 4);
+            this.ctx.fillStyle = 'red';
+            const size = this.gridSize * 1.5;
+            this.ctx.fillRect(-size/2, -size/2, size, size);
+            this.ctx.restore();
+
+            // 繪製文字
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = '900 45px "Noto Sans TC"';
             this.ctx.textAlign = 'center';
             this.ctx.fillText(
                 this.food.word,
@@ -296,10 +308,23 @@ class SnakeGame {
         }
 
         // 繪製干擾食物
-        this.ctx.fillStyle = '#000';
         this.decoyFoods.forEach(decoy => {
-            this.ctx.font = '35px Noto Sans TC';
-            this.ctx.fontWeight = 'bold';
+            // 繪製菱形背景
+            this.ctx.save();
+            this.ctx.translate(
+                decoy.x * this.gridSize + this.gridSize/2,
+                decoy.y * this.gridSize + this.gridSize/2
+            );
+            this.ctx.rotate(Math.PI / 4);
+            this.ctx.fillStyle = 'red';
+            const size = this.gridSize * 1.5;
+            this.ctx.fillRect(-size/2, -size/2, size, size);
+            this.ctx.restore();
+
+            // 繪製文字
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = '900 45px "Noto Sans TC"';
+            this.ctx.textAlign = 'center';
             this.ctx.fillText(
                 decoy.word,
                 decoy.x * this.gridSize + this.gridSize/2,
