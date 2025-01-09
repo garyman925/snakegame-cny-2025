@@ -102,14 +102,13 @@ class SnakeGame {
 
     drawInitialScreen() {
         // 繪製純色背景
-        this.ctx.fillStyle = '#ebfcff';
+        this.ctx.fillStyle = '#fff';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
         // 繪製文字
         this.ctx.fillStyle = '#000';
         this.ctx.font = '20px Arial';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('按開始遊戲按鈕開始', this.canvas.width / 2, this.canvas.height / 2);
     }
 
     initializeGame() {
@@ -146,22 +145,30 @@ class SnakeGame {
         this.selectNextGreeting();
 
         this.clearCollectedWords();
+
+        // 隱藏開始按鈕
+        document.getElementById('startButton').style.display = 'none';
     }
 
     spawnFood() {
-        let x, y;
-        const maxX = this.canvas.width - this.pixelSize;
-        const maxY = this.canvas.height - this.pixelSize;
+        // 設定安全邊距，避免文字被遮蔽
+        const margin = this.pixelSize * 2;
+        const maxX = this.canvas.width - margin;
+        const minX = margin;
+        const maxY = this.canvas.height - margin;
+        const minY = margin + 80; // 上方多留空間給計時器和收集字詞
         
         // 創建一個用於追蹤已使用位置的數組
         const usedPositions = [];
         
         // 生成正確答案的位置
+        let x, y;
         do {
-            x = Math.floor(Math.random() * (maxX / this.pixelSize)) * this.pixelSize;
-            y = Math.floor(Math.random() * (maxY / this.pixelSize)) * this.pixelSize;
+            x = Math.floor(Math.random() * ((maxX - minX) / this.pixelSize)) * this.pixelSize + minX;
+            y = Math.floor(Math.random() * ((maxY - minY) / this.pixelSize)) * this.pixelSize + minY;
         } while (
-            this.snake.some(segment => segment.x === x && segment.y === y)
+            this.snake.some(segment => segment.x === x && segment.y === y) ||
+            this.isPositionOverlapping(x, y, usedPositions)
         );
 
         this.food = {
@@ -176,7 +183,7 @@ class SnakeGame {
         // 生成干擾食物
         this.decoyFoods = [];
         const currentGreeting = this.greetingsData[this.currentGreetingIndex];
-        const wrongWords = [...currentGreeting.wrong_words]; // 複製數組以便打亂
+        const wrongWords = [...currentGreeting.wrong_words];
         
         // 打亂 wrong_words 數組
         for (let i = wrongWords.length - 1; i > 0; i--) {
@@ -185,8 +192,8 @@ class SnakeGame {
         }
 
         // 計算可用的網格數量
-        const gridCols = Math.floor(maxX / this.pixelSize);
-        const gridRows = Math.floor(maxY / this.pixelSize);
+        const gridCols = Math.floor((maxX - minX) / this.pixelSize);
+        const gridRows = Math.floor((maxY - minY) / this.pixelSize);
         const totalGrids = gridCols * gridRows;
         
         // 確保有足夠的空間放置所有食物
@@ -196,31 +203,38 @@ class SnakeGame {
         for (let i = 0; i < maxFoods; i++) {
             let dx, dy;
             let attempts = 0;
-            const maxAttempts = 100; // 防止無限循環
+            const maxAttempts = 100;
 
             do {
-                dx = Math.floor(Math.random() * gridCols) * this.pixelSize;
-                dy = Math.floor(Math.random() * gridRows) * this.pixelSize;
+                dx = Math.floor(Math.random() * gridCols) * this.pixelSize + minX;
+                dy = Math.floor(Math.random() * gridRows) * this.pixelSize + minY;
                 attempts++;
                 
                 if (attempts > maxAttempts) {
                     console.warn('無法找到更多不重疊的位置');
-                    return; // 如果找不到合適的位置就提前退出
+                    return;
                 }
             } while (
                 this.snake.some(segment => segment.x === dx && segment.y === dy) ||
-                usedPositions.some(pos => pos.x === dx && pos.y === dy)
+                this.isPositionOverlapping(dx, dy, usedPositions)
             );
 
-            // 記錄新使用的位置
             usedPositions.push({x: dx, y: dy});
-
             this.decoyFoods.push({
                 x: dx,
                 y: dy,
                 word: wrongWords[i]
             });
         }
+    }
+
+    // 添加檢查位置是否重疊的方法
+    isPositionOverlapping(x, y, positions) {
+        const safeDistance = this.pixelSize * 2; // 設定安全距離
+        return positions.some(pos => 
+            Math.abs(pos.x - x) < safeDistance && 
+            Math.abs(pos.y - y) < safeDistance
+        );
     }
 
     updateWordDisplay() {
@@ -387,7 +401,10 @@ class SnakeGame {
         clearInterval(this.timer);
         
         this.showGameResult();
-        document.getElementById('startButton').textContent = '開始遊戲';
+        // 遊戲結束時顯示開始按鈕
+        const startButton = document.getElementById('startButton');
+        startButton.style.display = 'block';
+        startButton.textContent = '開始遊戲';
         this.drawInitialScreen();
     }
 
@@ -477,7 +494,10 @@ class SnakeGame {
         clearInterval(this.timer);
         
         this.showGameResult();
-        document.getElementById('startButton').textContent = '開始遊戲';
+        // 時間到時顯示開始按鈕
+        const startButton = document.getElementById('startButton');
+        startButton.style.display = 'block';
+        startButton.textContent = '開始遊戲';
         this.drawInitialScreen();
     }
 
@@ -485,14 +505,37 @@ class SnakeGame {
     showGameResult() {
         document.getElementById('finalScore').textContent = this.score;
         
-        const completedWordsList = document.getElementById('completedWordsList');
+        const tbody = document.getElementById('completedWordsList');
+        tbody.innerHTML = ''; // 清空現有內容
+        
         if (this.completedGreetings.length > 0) {
-            completedWordsList.textContent = this.completedGreetings.join('、');
+            this.completedGreetings.forEach(greeting => {
+                const tr = document.createElement('tr');
+                const td = document.createElement('td');
+                td.textContent = greeting;
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+            });
         } else {
-            completedWordsList.textContent = '未能完成任何祝賀詞';
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.textContent = '未能完成任何祝賀詞';
+            tr.appendChild(td);
+            tbody.appendChild(tr);
         }
         
         this.resultElement.classList.remove('hidden');
+
+        // 添加重新開始按鈕的事件監聽
+        const restartButton = this.resultElement.querySelector('.restart-button');
+        restartButton.onclick = () => {
+            this.resultElement.classList.add('hidden');
+            this.initializeGame();
+            this.gameLoop = setInterval(() => {
+                this.move();
+                this.draw();
+            }, 200);
+        };
     }
 
     // 隱藏結果

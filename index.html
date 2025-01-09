@@ -32,11 +32,23 @@
         
         <div id="gameResult" class="game-result hidden">
             <h2>遊戲結束</h2>
-            <p>最終得分：<span id="finalScore">0</span></p>
-            <div class="completed-words">
-                <h3>完成的祝賀詞：</h3>
-                <p id="completedWordsList">未能完成任何祝賀詞</p>
+            <div class="score-display">
+                <div class="score-label">最終得分</div>
+                <div class="score-value"><span id="finalScore">0</span></div>
             </div>
+            <div class="result-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>完成的祝賀詞</th>
+                        </tr>
+                    </thead>
+                    <tbody id="completedWordsList">
+                        <!-- 動態填充 -->
+                    </tbody>
+                </table>
+            </div>
+            <button class="restart-button">重新開始</button>
         </div>
 
         <div id="completionPopup" class="completion-popup hidden">
