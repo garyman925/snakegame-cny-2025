@@ -176,8 +176,11 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    opacity: 1;
     transform: scale(1);
+}
+
+.collected-word.active {
+    opacity: 1;
 }
 
 .collected-word::before {
@@ -188,6 +191,21 @@ body {
     background: red;
     border: 6px solid #ffdd00;
     transform: rotate(45deg);
+}
+
+.collected-word .hint {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 3rem;
+    color: #000;
+    white-space: nowrap;
+    opacity: 0.3;
+    transition: opacity 0.3s ease;
+}
+
+.collected-word.active .hint {
+    opacity: 1;
 }
 
 .collected-word.bounce {
@@ -228,6 +246,7 @@ body {
 .collected-word span {
     position: relative;
     z-index: 1;
+    color:#fff;
     background: transparent;
 }
 

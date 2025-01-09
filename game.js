@@ -3,24 +3,22 @@ class SnakeGame {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
         
-        // 初始化圖片加載狀態
-        this.imagesLoaded = false;
+        this.pixelSize = 50; // 蛇身和食物的大小
         
-        // 加載所有圖片
-        this.loadImages().then(() => {
-            this.imagesLoaded = true;
-            // 設置全屏
-            this.resizeCanvas();
-            // 監聽視窗大小變化
-            window.addEventListener('resize', () => this.resizeCanvas());
-            
-            this.setupEventListeners();
-            this.updateWordDisplay();
-            this.drawInitialScreen();
-        });
+        // 初始化蛇的起始位置
+        this.snake = [
+            {x: 100, y: 50},
+            {x: 50, y: 50},
+            {x: 0, y: 50}
+        ];
+        
+        // 移除圖片相關的初始化
+        this.resizeCanvas();
+        window.addEventListener('resize', () => this.resizeCanvas());
+        this.setupEventListeners();
+        this.updateWordDisplay();
+        this.drawInitialScreen();
 
-        this.gridSize = 40;
-        this.snake = [];
         this.direction = 'right';
         this.words = ['龍', '馬', '精', '神'];
         this.currentWordIndex = 0;
@@ -102,34 +100,9 @@ class SnakeGame {
         }
     }
 
-    // 添加圖片加載方法
-    async loadImages() {
-        // 加載圖片
-        this.headImage = await this.loadImage('img/head.png');
-        this.bodyImage = await this.loadImage('img/body.png');
-        this.floorImage1 = await this.loadImage('img/floor-1.png');
-        this.floorImage2 = await this.loadImage('img/floor-2.png');
-    }
-
-    // 輔助方法：加載單個圖片
-    loadImage(src) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => resolve(img);
-            img.onerror = reject;
-            img.src = src;
-        });
-    }
-
     drawInitialScreen() {
-        // 確保圖片已加載
-        if (!this.imagesLoaded) return;
-
-        // 繪製地板作為背景
-        this.drawFloor();
-        
-        // 添加半透明的遮罩
-        this.ctx.fillStyle = 'rgba(235, 252, 255, 0.7)';
+        // 繪製純色背景
+        this.ctx.fillStyle = '#ebfcff';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
         // 繪製文字
@@ -140,10 +113,11 @@ class SnakeGame {
     }
 
     initializeGame() {
+        // 初始化蛇的位置（使用像素）
         this.snake = [
-            {x: 2, y: 1},
-            {x: 1, y: 1},
-            {x: 0, y: 1}
+            {x: 100, y: 50},
+            {x: 50, y: 50},
+            {x: 0, y: 50}
         ];
         this.direction = 'right';
         this.score = 0;
@@ -176,42 +150,75 @@ class SnakeGame {
 
     spawnFood() {
         let x, y;
-        const maxX = Math.floor(this.canvas.width / this.gridSize);
-        const maxY = Math.floor(this.canvas.height / this.gridSize);
+        const maxX = this.canvas.width - this.pixelSize;
+        const maxY = this.canvas.height - this.pixelSize;
         
+        // 創建一個用於追蹤已使用位置的數組
+        const usedPositions = [];
+        
+        // 生成正確答案的位置
         do {
-            x = Math.floor(Math.random() * maxX);
-            y = Math.floor(Math.random() * maxY);
-        } while (this.snake.some(segment => segment.x === x && segment.y === y));
+            x = Math.floor(Math.random() * (maxX / this.pixelSize)) * this.pixelSize;
+            y = Math.floor(Math.random() * (maxY / this.pixelSize)) * this.pixelSize;
+        } while (
+            this.snake.some(segment => segment.x === x && segment.y === y)
+        );
 
         this.food = {
             x: x,
             y: y,
             word: this.currentWords[this.currentWordIndex]
         };
+        
+        // 記錄已使用的位置
+        usedPositions.push({x: this.food.x, y: this.food.y});
 
+        // 生成干擾食物
         this.decoyFoods = [];
-        for (let i = 0; i < this.numberOfDecoys; i++) {
+        const currentGreeting = this.greetingsData[this.currentGreetingIndex];
+        const wrongWords = [...currentGreeting.wrong_words]; // 複製數組以便打亂
+        
+        // 打亂 wrong_words 數組
+        for (let i = wrongWords.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [wrongWords[i], wrongWords[j]] = [wrongWords[j], wrongWords[i]];
+        }
+
+        // 計算可用的網格數量
+        const gridCols = Math.floor(maxX / this.pixelSize);
+        const gridRows = Math.floor(maxY / this.pixelSize);
+        const totalGrids = gridCols * gridRows;
+        
+        // 確保有足夠的空間放置所有食物
+        const maxFoods = Math.min(wrongWords.length, totalGrids - this.snake.length - 1);
+        
+        // 生成所有干擾食物，確保位置不重疊
+        for (let i = 0; i < maxFoods; i++) {
             let dx, dy;
+            let attempts = 0;
+            const maxAttempts = 100; // 防止無限循環
+
             do {
-                dx = Math.floor(Math.random() * (this.canvas.width / this.gridSize));
-                dy = Math.floor(Math.random() * (this.canvas.height / this.gridSize));
+                dx = Math.floor(Math.random() * gridCols) * this.pixelSize;
+                dy = Math.floor(Math.random() * gridRows) * this.pixelSize;
+                attempts++;
+                
+                if (attempts > maxAttempts) {
+                    console.warn('無法找到更多不重疊的位置');
+                    return; // 如果找不到合適的位置就提前退出
+                }
             } while (
                 this.snake.some(segment => segment.x === dx && segment.y === dy) ||
-                (dx === this.food.x && dy === this.food.y) ||
-                this.decoyFoods.some(decoy => decoy.x === dx && decoy.y === dy)
+                usedPositions.some(pos => pos.x === dx && pos.y === dy)
             );
 
-            let decoyWord;
-            do {
-                const randomGreeting = this.greetingsData[Math.floor(Math.random() * this.greetingsData.length)];
-                decoyWord = randomGreeting.words[Math.floor(Math.random() * randomGreeting.words.length)];
-            } while (decoyWord === this.currentWords[this.currentWordIndex]);
+            // 記錄新使用的位置
+            usedPositions.push({x: dx, y: dy});
 
             this.decoyFoods.push({
                 x: dx,
                 y: dy,
-                word: decoyWord
+                word: wrongWords[i]
             });
         }
     }
@@ -227,72 +234,32 @@ class SnakeGame {
     }
 
     draw() {
-        // 確保圖片已加載
-        if (!this.imagesLoaded) return;
-
-        // 首先繪製地板
-        this.drawFloor();
-        
-        // 繪製網格線（可選）
-        this.drawGrid();
-        
-        // 背景
-        this.ctx.fillStyle = 'transparent';
+        // 繪製純色背景
+        this.ctx.fillStyle = '#ebfcff';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
         // 繪製蛇
         this.snake.forEach((segment, index) => {
-            if (index === 0) {
-                // 繪製蛇頭，根據方向旋轉
-                this.ctx.save();
-                // 移動到蛇頭位置的中心點
-                this.ctx.translate(
-                    segment.x * this.gridSize + this.gridSize/2,
-                    segment.y * this.gridSize + this.gridSize/2
-                );
-                
-                // 根據方向旋轉
-                let rotation = 0;
-                switch(this.direction) {
-                    case 'up': rotation = -Math.PI/2; break;
-                    case 'down': rotation = Math.PI/2; break;
-                    case 'left': rotation = Math.PI; break;
-                    case 'right': rotation = 0; break;
-                }
-                this.ctx.rotate(rotation);
-                
-                // 繪製蛇頭圖片
-                this.ctx.drawImage(
-                    this.headImage,
-                    -this.gridSize/2,
-                    -this.gridSize/2,
-                    this.gridSize,
-                    this.gridSize
-                );
-                this.ctx.restore();
-            } else {
-                // 繪製蛇身
-                this.ctx.drawImage(
-                    this.bodyImage,
-                    segment.x * this.gridSize,
-                    segment.y * this.gridSize,
-                    this.gridSize,
-                    this.gridSize
-                );
-            }
+            this.ctx.fillStyle = index === 0 ? '#ff0000' : '#ffdd00';
+            this.ctx.fillRect(
+                segment.x,
+                segment.y,
+                this.pixelSize,
+                this.pixelSize
+            );
         });
 
-        // 只在食物沒有被吃掉時繪製食物
+        // 繪製食物和文字
         if (this.food && !this.foodEaten) {
             // 繪製菱形背景
             this.ctx.save();
             this.ctx.translate(
-                this.food.x * this.gridSize + this.gridSize/2,
-                this.food.y * this.gridSize + this.gridSize/2
+                this.food.x + this.pixelSize/2,
+                this.food.y + this.pixelSize/2
             );
             this.ctx.rotate(Math.PI / 4);
             this.ctx.fillStyle = 'red';
-            const size = this.gridSize * 1.5;
+            const size = this.pixelSize * 1.5;
             this.ctx.fillRect(-size/2, -size/2, size, size);
             this.ctx.restore();
 
@@ -302,59 +269,59 @@ class SnakeGame {
             this.ctx.textAlign = 'center';
             this.ctx.fillText(
                 this.food.word,
-                this.food.x * this.gridSize + this.gridSize/2,
-                this.food.y * this.gridSize + this.gridSize/2 + 8
+                this.food.x + this.pixelSize/2,
+                this.food.y + this.pixelSize/2 + 8
             );
         }
 
         // 繪製干擾食物
-        this.decoyFoods.forEach(decoy => {
-            // 繪製菱形背景
-            this.ctx.save();
-            this.ctx.translate(
-                decoy.x * this.gridSize + this.gridSize/2,
-                decoy.y * this.gridSize + this.gridSize/2
-            );
-            this.ctx.rotate(Math.PI / 4);
-            this.ctx.fillStyle = 'red';
-            const size = this.gridSize * 1.5;
-            this.ctx.fillRect(-size/2, -size/2, size, size);
-            this.ctx.restore();
+        if (this.decoyFoods) {  // 添加檢查
+            this.decoyFoods.forEach(decoy => {
+                // 繪製菱形背景
+                this.ctx.save();
+                this.ctx.translate(
+                    decoy.x + this.pixelSize/2,
+                    decoy.y + this.pixelSize/2
+                );
+                this.ctx.rotate(Math.PI / 4);
+                this.ctx.fillStyle = 'red';
+                const size = this.pixelSize * 1.5;
+                this.ctx.fillRect(-size/2, -size/2, size, size);
+                this.ctx.restore();
 
-            // 繪製文字
-            this.ctx.fillStyle = '#fff';
-            this.ctx.font = '900 45px "Noto Sans TC"';
-            this.ctx.textAlign = 'center';
-            this.ctx.fillText(
-                decoy.word,
-                decoy.x * this.gridSize + this.gridSize/2,
-                decoy.y * this.gridSize + this.gridSize/2 + 8
-            );
-        });
+                // 繪製文字
+                this.ctx.fillStyle = '#fff';
+                this.ctx.font = '900 45px "Noto Sans TC"';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(
+                    decoy.word,
+                    decoy.x + this.pixelSize/2,
+                    decoy.y + this.pixelSize/2 + 8
+                );
+            });
+        }
     }
 
     move() {
         const head = {...this.snake[0]};
 
         switch(this.direction) {
-            case 'up': head.y--; break;
-            case 'down': head.y++; break;
-            case 'left': head.x--; break;
-            case 'right': head.x++; break;
+            case 'up': head.y -= this.pixelSize; break;
+            case 'down': head.y += this.pixelSize; break;
+            case 'left': head.x -= this.pixelSize; break;
+            case 'right': head.x += this.pixelSize; break;
         }
 
-        const maxX = Math.floor(this.canvas.width / this.gridSize);
-        const maxY = Math.floor(this.canvas.height / this.gridSize);
-
+        // 處理邊界
         if (head.x < 0) {
-            head.x = maxX - 1;
-        } else if (head.x >= maxX) {
+            head.x = this.canvas.width - this.pixelSize;
+        } else if (head.x >= this.canvas.width) {
             head.x = 0;
         }
 
         if (head.y < 0) {
-            head.y = maxY - 1;
-        } else if (head.y >= maxY) {
+            head.y = this.canvas.height - this.pixelSize;
+        } else if (head.y >= this.canvas.height) {
             head.y = 0;
         }
 
@@ -533,67 +500,15 @@ class SnakeGame {
         this.resultElement.classList.add('hidden');
     }
 
-    // 添加繪製地板的方法
-    drawFloor() {
-        // 確保圖片已加載
-        if (!this.imagesLoaded) return;
-
-        const tileSize = this.gridSize;
-        const numTilesX = Math.ceil(this.canvas.width / tileSize);
-        const numTilesY = Math.ceil(this.canvas.height / tileSize);
-
-        for (let y = 0; y < numTilesY; y++) {
-            for (let x = 0; x < numTilesX; x++) {
-                const currentTile = (x + y) % 2 === 0 ? this.floorImage1 : this.floorImage2;
-                this.ctx.drawImage(
-                    currentTile,
-                    x * tileSize,
-                    y * tileSize,
-                    tileSize,
-                    tileSize
-                );
-            }
-        }
-    }
-
-    // 添加繪製網格的方法（可選，幫助玩家更清楚地看到移動單位）
-    drawGrid() {
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0)';
-        this.ctx.lineWidth = 1;
-
-        // 繪製垂直線
-        for (let x = 0; x <= this.canvas.width; x += this.gridSize) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, this.canvas.height);
-            this.ctx.stroke();
-        }
-
-        // 繪製水平線
-        for (let y = 0; y <= this.canvas.height; y += this.gridSize) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, y);
-            this.ctx.lineTo(this.canvas.width, y);
-            this.ctx.stroke();
-        }
-    }
-
-    // 添加調整畫布大小的方法
+    // 修改 resizeCanvas 方法
     resizeCanvas() {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
         
-        // 重新計算網格大小以適應屏幕
-        const minDimension = Math.min(this.canvas.width, this.canvas.height);
-        this.gridSize = Math.floor(minDimension / 20);
-        
-        // 只在圖片加載完成後重繪
-        if (this.imagesLoaded) {
-            if (!this.isGameOver) {
-                this.draw();
-            } else {
-                this.drawInitialScreen();
-            }
+        if (!this.isGameOver) {
+            this.draw();
+        } else {
+            this.drawInitialScreen();
         }
     }
 
@@ -622,6 +537,24 @@ class SnakeGame {
         this.currentWords = [...greeting.words];
         this.currentWordIndex = 0;
         this.updateWordDisplay();
+        
+        // 更新提示文字
+        this.collectedWordsElements.forEach((element, index) => {
+            // 移除之前的提示元素（如果存在）
+            const oldHint = element.querySelector('.hint');
+            if (oldHint) {
+                oldHint.remove();
+            }
+            
+            // 創建新的提示元素
+            const hint = document.createElement('div');
+            hint.className = 'hint';
+            hint.textContent = this.currentWords[index];  // 直接顯示目標字
+            element.appendChild(hint);
+            
+            // 重置狀態
+            element.classList.remove('active');
+        });
     }
 
     // 顯示收集到的字
@@ -630,6 +563,7 @@ class SnakeGame {
         const span = element.querySelector('span');
         span.textContent = word;
         element.classList.remove('bounce');
+        element.classList.add('active');  // 添加活躍狀態
         // 觸發重排以重新開始動畫
         void element.offsetWidth;
         element.classList.add('bounce');
@@ -641,6 +575,7 @@ class SnakeGame {
             const span = element.querySelector('span');
             span.textContent = '';
             element.classList.remove('bounce');
+            element.classList.remove('active');  // 移除活躍狀態
         });
     }
 
