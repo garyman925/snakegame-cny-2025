@@ -28,6 +28,7 @@ body {
     top: 20px;
     left: 0;
     width: 100%;
+    height: 80px;
     padding: 10px;
     display: flex;
     justify-content: space-between;
@@ -442,4 +443,17 @@ body {
 
 .flash-overlay.active {
     animation: flash 1s ease;
+}
+
+.collected-words,
+.timer-container {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.game-started .collected-words,
+.game-started .timer-container {
+    opacity: 1;
+    visibility: visible;
 }

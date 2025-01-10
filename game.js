@@ -175,6 +175,9 @@ class SnakeGame {
                 this.drawInitialScreen();
             }
         };
+
+        // 初始化時隱藏遊戲界面元素
+        document.querySelector('.game-container').classList.remove('game-started');
     }
 
     drawInitialScreen() {
@@ -188,6 +191,9 @@ class SnakeGame {
     }
 
     initializeGame() {
+        // 顯示遊戲界面元素
+        document.querySelector('.game-container').classList.add('game-started');
+
         // 重置蛇的位置
         this.snake = [
             {x: 100, y: 50},
@@ -199,44 +205,38 @@ class SnakeGame {
         this.currentWordIndex = 0;
         this.isGameOver = false;
 
-        // 重新創建背景圖案（確保在遊戲中也能看到）
+        // 重新創建背景圖案
         if (this.backgroundPattern.complete) {
             const patternCanvas = document.createElement('canvas');
             const patternContext = patternCanvas.getContext('2d');
             patternCanvas.width = this.backgroundPattern.width;
             patternCanvas.height = this.backgroundPattern.height;
             
-            // 繪製原圖並設置透明度
             patternContext.globalAlpha = 0.02;
             patternContext.drawImage(this.backgroundPattern, 0, 0);
             
-            // 重新創建圖案
             this.pattern = this.ctx.createPattern(patternCanvas, 'repeat');
         }
 
-        this.spawnFood();
+        // 重置遊戲狀態
         this.remainingTime = this.gameTime;
         this.completedWords = [];
+        this.currentGreetingIndex = 0;
+        this.completedGreetings = [];
         
         // 開始計時
         if (this.timer) {
             clearInterval(this.timer);
         }
         this.timer = setInterval(() => this.updateTimer(), 1000);
-        
-        this.updateTimer(); // 立即更新顯示
+        this.updateTimer();
 
         // 隱藏結果顯示
         this.hideGameResult();
-
-        this.foodEaten = false; // 重置食物狀態
-
-        this.currentGreetingIndex = 0;
-        this.currentWordIndex = 0;
-        this.completedGreetings = [];
-        this.selectNextGreeting();
-
+        
+        // 清空並準備新的詞組
         this.clearCollectedWords();
+        this.selectNextGreeting(true); // 添加參數表示是初始化調用
 
         // 隱藏開始按鈕
         document.getElementById('startButton').style.display = 'none';
@@ -248,6 +248,56 @@ class SnakeGame {
         // 開始播放背景音樂
         if (!this.bgm.playing()) {
             this.bgm.play();
+        }
+    }
+
+    // 修改 selectNextGreeting 方法
+    selectNextGreeting(isInitial = false) {
+        const collectedWords = document.querySelector('.collected-words');
+        collectedWords.classList.add('changing');
+        
+        // 先更新當前詞組
+        const greeting = this.greetingsData[this.currentGreetingIndex];
+        this.words = greeting.words;
+        this.currentWords = [...greeting.words];
+        this.currentWordIndex = 0;
+        
+        setTimeout(() => {
+            // 清空所有已收集的字
+            this.collectedWordsElements.forEach(element => {
+                const span = element.querySelector('span');
+                if (span) {
+                    span.textContent = '';
+                }
+                element.classList.remove('active', 'bounce');
+            });
+
+            // 更新提示文字
+            this.collectedWordsElements.forEach((element, index) => {
+                const oldHint = element.querySelector('.hint');
+                if (oldHint) {
+                    oldHint.remove();
+                }
+                
+                const hint = document.createElement('div');
+                hint.className = 'hint';
+                hint.textContent = this.currentWords[index];
+                element.appendChild(hint);
+                element.classList.remove('active');
+            });
+
+            // 只在非初始化時才重新生成食物
+            if (!isInitial) {
+                this.spawnFood();
+            }
+
+            // 恢復位置並顯示新內容
+            collectedWords.classList.remove('changing');
+        }, 500);
+
+        // 如果是初始化調用，立即生成食物
+        if (isInitial) {
+            this.spawnFood();
         }
     }
 
@@ -575,6 +625,9 @@ class SnakeGame {
                 // 播放收集音效
                 this.sounds.collect.play();
 
+                // 每收集到一個正確的字就讓蛇生長
+                this.growSnake();
+
                 // 檢查是否收集完所有正確字
                 if (this.correctFoods.every(f => f.collected)) {
                     this.completedGreetings.push(this.currentWords.join(''));
@@ -585,16 +638,12 @@ class SnakeGame {
                     
                     this.currentGreetingIndex++;
                     
-                    // 增加蛇的長度
-                    this.growSnake();
-                    
                     if (this.currentGreetingIndex >= this.greetingsData.length) {
                         this.gameOver();
                         return;
                     }
                     
                     this.selectNextGreeting();
-                    this.spawnFood();
                 }
             }
         });
@@ -767,6 +816,9 @@ class SnakeGame {
 
         // 停止背景音樂
         this.bgm.stop();
+
+        // 隱藏遊戲界面元素
+        document.querySelector('.game-container').classList.remove('game-started');
     }
 
     setupEventListeners() {
@@ -923,50 +975,6 @@ class SnakeGame {
             }];
             this.selectNextGreeting();
         }
-    }
-
-    // 選擇下一組祝賀詞
-    selectNextGreeting() {
-        const collectedWords = document.querySelector('.collected-words');
-        collectedWords.classList.add('changing');
-        
-        // 先更新當前詞組
-        const greeting = this.greetingsData[this.currentGreetingIndex];
-        this.words = greeting.words;
-        this.currentWords = [...greeting.words];
-        this.currentWordIndex = 0;
-        
-        // 等待動畫完成後更新顯示
-        setTimeout(() => {
-            // 清空所有已收集的字
-            this.collectedWordsElements.forEach(element => {
-                const span = element.querySelector('span');
-                if (span) {
-                    span.textContent = '';
-                }
-                element.classList.remove('active', 'bounce');
-            });
-
-            // 更新提示文字
-            this.collectedWordsElements.forEach((element, index) => {
-                const oldHint = element.querySelector('.hint');
-                if (oldHint) {
-                    oldHint.remove();
-                }
-                
-                const hint = document.createElement('div');
-                hint.className = 'hint';
-                hint.textContent = this.currentWords[index];
-                element.appendChild(hint);
-                element.classList.remove('active');
-            });
-
-            // 重新生成食物
-            this.spawnFood();
-
-            // 恢復位置並顯示新內容
-            collectedWords.classList.remove('changing');
-        }, 500);
     }
 
     // 顯示收集到的字
