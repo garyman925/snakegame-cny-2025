@@ -53,8 +53,8 @@ class SnakeGame {
         this.numberOfDecoys = 3;
         this.decoyFoods = [];
 
-        // 添加計時相關的屬性
-        this.gameTime = 60; // 60秒
+        // 修改計時相關的屬性
+        this.gameTime = 120; // 改為 120 秒
         this.remainingTime = this.gameTime;
         this.timer = null;
         this.completedWords = []; // 記錄完成的祝賀詞
@@ -296,6 +296,10 @@ class SnakeGame {
         this.wrongWords = greeting.wrong_words || [];
         this.currentWordIndex = 0;
         
+        // 重新設置畫布大小
+        this.setupCanvasSize();
+        
+        // 等待一小段時間確保畫布尺寸已更新
         setTimeout(() => {
             // 清空所有已收集的字
             this.collectedWordsElements.forEach(element => {
@@ -320,17 +324,18 @@ class SnakeGame {
                 element.classList.remove('active');
             });
 
-            // 只在非初始化時才重新生成食物
+            // 生成新食物
             if (!isInitial) {
+                // 確保在生成食物前重新計算尺寸
+                this.setupCanvasSize();
                 this.spawnFood();
             }
 
-            // 恢復位置並顯示新內容
             collectedWords.classList.remove('changing');
         }, 500);
 
-        // 如果是初始化調用，立即生成食物
         if (isInitial) {
+            this.setupCanvasSize();
             this.spawnFood();
         }
     }
@@ -344,18 +349,40 @@ class SnakeGame {
             decoys: []
         };
 
-        // 設置安全邊距
-        const margin = this.pixelSize * 2;
-        const minFoodDistance = this.pixelSize * 4; // 食物之間的最小距離
+        // 重新設置畫布大小以確保尺寸正確
+        this.setupCanvasSize();
+
+        // 設置安全邊距，根據螢幕大小調整
+        const margin = this.isMobile ? this.pixelSize : this.pixelSize * 2; // 減少移動設備的邊距
+        const bottomMargin = this.isMobile ? 
+            (window.innerHeight <= 667 ? 180 : 150) : margin; // 稍微減少底部邊距
+        const minFoodDistance = this.isMobile ? 
+            this.pixelSize * 2.5 : // 減少移動設備上食物之間的最小距離
+            this.pixelSize * 4;    // 桌面版保持原來的距離
         
         // 獲取 game-header 的實際高度
         const header = document.querySelector('.game-header');
         const headerHeight = header.getBoundingClientRect().height + 20;
 
-        // 計算可用區域
+        // 計算可用區域（確保使用最新的畫布尺寸）
         const availableWidth = this.canvas.width - margin * 2;
-        const availableHeight = this.canvas.height - headerHeight - margin * 2;
+        const availableHeight = this.canvas.height - headerHeight - bottomMargin - margin;
         const startY = headerHeight + margin;
+
+        // 針對小螢幕設備的額外安全檢查
+        const isSmallScreen = window.innerHeight <= 667;
+        const safeHeight = isSmallScreen ? 
+            this.canvas.height - 180 : // 減少安全高度限制
+            this.canvas.height - bottomMargin;
+
+        // 檢查並輸出計算的區域
+        console.log('Available area:', {
+            width: availableWidth,
+            height: availableHeight,
+            startY: startY,
+            canvasWidth: this.canvas.width,
+            canvasHeight: this.canvas.height
+        });
 
         // 用於存儲所有已放置的食物位置
         const placedFoods = [];
@@ -370,6 +397,12 @@ class SnakeGame {
             while (!validPosition && attempts < maxAttempts) {
                 x = Math.floor(Math.random() * availableWidth + margin);
                 y = Math.floor(Math.random() * availableHeight + startY);
+                
+                // 確保 y 不會太接近底部，針對小螢幕特別處理
+                if (y > safeHeight) {
+                    continue;
+                }
+
                 validPosition = true;
                 attempts++;
 
@@ -421,6 +454,12 @@ class SnakeGame {
             while (!validPosition && attempts < maxAttempts) {
                 x = Math.floor(Math.random() * availableWidth + margin);
                 y = Math.floor(Math.random() * availableHeight + startY);
+                
+                // 確保 y 不會太接近底部，針對小螢幕特別處理
+                if (y > safeHeight) {
+                    continue;
+                }
+
                 validPosition = true;
                 attempts++;
 
@@ -678,7 +717,11 @@ class SnakeGame {
         );
         this.ctx.rotate(animation.rotation);
         this.ctx.fillStyle = '#fff';
-        this.ctx.font = '900 45px "Noto Sans TC"';
+        
+        // 根據設備類型設置不同的字體大小
+        const fontSize = this.isMobile ? '25px' : '45px';
+        this.ctx.font = `900 ${fontSize} "Noto Sans TC"`;
+        
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText(food.word, 0, 0);

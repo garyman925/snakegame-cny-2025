@@ -574,13 +574,14 @@ body {
     }
 }
 
+.music-control {
+    display: none !important; /* 完全隱藏音樂控制按鈕 */
+    transition: all 0.3s ease;
+}
+
 .music-control:hover {
     transform: scale(1.1);
     background: rgba(255, 255, 255, 1);
-}
-
-.music-control {
-    transition: all 0.3s ease;
 }
 
 @keyframes flash {
