@@ -1,3 +1,19 @@
+class Collider2D {
+    static boxCollision(rect1, rect2) {
+        return (rect1.x < rect2.x + rect2.width &&
+                rect1.x + rect1.width > rect2.x &&
+                rect1.y < rect2.y + rect2.height &&
+                rect1.y + rect1.height > rect2.y);
+    }
+
+    static circleCollision(circle1, circle2) {
+        const dx = circle1.x - circle2.x;
+        const dy = circle1.y - circle2.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance < (circle1.radius + circle2.radius);
+    }
+}
+
 class SnakeGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
@@ -84,7 +100,9 @@ class SnakeGame {
                 if (timerText && timerBar) {
                     timerText.textContent = this.remainingTime;
                     const percentage = (this.remainingTime / this.gameTime) * 100;
-                    timerBar.style.width = `${percentage}%`;
+                    // 使用 transform 來縮短 timer bar
+                    timerBar.style.transform = `scaleX(${percentage / 100})`;
+                    timerBar.style.transformOrigin = 'left';
                 }
 
                 // 當時間少於 10 秒時添加警告效果
@@ -98,6 +116,40 @@ class SnakeGame {
                 }
             }
         }
+
+        // 添加動畫相關屬性
+        this.animationProgress = 0;
+        this.lastPosition = null;
+        this.moveSpeed = 0.15; // 控制移動速度，數值越小移動越慢
+        
+        // 修改遊戲循環的間隔時間，使動畫更流暢
+        this.frameInterval = 1000/60; // 60fps 改為 30fps
+
+        // 添加食物動畫相關屬性
+        this.foodAnimationDistance = this.pixelSize * 3; // 感應距離
+        this.foodAnimations = {
+            correct: [],
+            decoys: []
+        };
+
+        // 初始化食物相關屬性
+        this.food = null;
+        this.correctFoods = [];  // 初始化為空數組
+        this.decoyFoods = [];    // 初始化為空數組
+
+        // 初始化音樂
+        this.initAudio();
+
+        // 添加懲罰相關屬性
+        this.isPenalized = false;
+        this.isInvincible = false;
+        this.penaltyDuration = 1000; // 1秒懲罰時間
+        this.invincibleDuration = 2000; // 2秒無敵時間
+        
+        // 創建閃光效果元素
+        this.flashOverlay = document.createElement('div');
+        this.flashOverlay.className = 'flash-overlay';
+        document.body.appendChild(this.flashOverlay);
     }
 
     drawInitialScreen() {
@@ -148,66 +200,115 @@ class SnakeGame {
 
         // 隱藏開始按鈕
         document.getElementById('startButton').style.display = 'none';
+
+        // 初始化動畫狀態
+        this.animationProgress = 0;
+        this.lastPosition = [...this.snake];
+
+        // 開始播放背景音樂
+        if (!this.bgm.playing()) {
+            this.bgm.play();
+        }
     }
 
     spawnFood() {
-        // 設定安全邊距，避免文字被遮蔽
+        // 設定安全邊距，確保食物完全在視窗內
         const margin = this.pixelSize * 2;
-        const maxX = this.canvas.width - margin;
+        const headerHeight = 100; // 上方標題欄和計時器的高度
+        
+        // 計算可用區域
+        const maxX = Math.min(this.canvas.width - margin - this.pixelSize, window.innerWidth - margin - this.pixelSize);
         const minX = margin;
-        const maxY = this.canvas.height - margin;
-        const minY = margin + 80; // 上方多留空間給計時器和收集字詞
-        
-        // 創建一個用於追蹤已使用位置的數組
-        const usedPositions = [];
-        
-        // 生成正確答案的位置
-        let x, y;
-        do {
-            x = Math.floor(Math.random() * ((maxX - minX) / this.pixelSize)) * this.pixelSize + minX;
-            y = Math.floor(Math.random() * ((maxY - minY) / this.pixelSize)) * this.pixelSize + minY;
-        } while (
-            this.snake.some(segment => segment.x === x && segment.y === y) ||
-            this.isPositionOverlapping(x, y, usedPositions)
-        );
+        const maxY = Math.min(this.canvas.height - margin - this.pixelSize, window.innerHeight - margin - this.pixelSize);
+        const minY = headerHeight + margin; // 確保不會生成在標題欄下方
 
-        this.food = {
-            x: x,
-            y: y,
-            word: this.currentWords[this.currentWordIndex]
-        };
-        
-        // 記錄已使用的位置
-        usedPositions.push({x: this.food.x, y: this.food.y});
+        // 增加食物之間的最小間距
+        const minFoodDistance = this.pixelSize * 4;
 
-        // 生成干擾食物
-        this.decoyFoods = [];
-        const currentGreeting = this.greetingsData[this.currentGreetingIndex];
-        const wrongWords = [...currentGreeting.wrong_words];
-        
-        // 打亂 wrong_words 數組
-        for (let i = wrongWords.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [wrongWords[i], wrongWords[j]] = [wrongWords[j], wrongWords[i]];
-        }
-
-        // 計算可用的網格數量
+        // 計算可用的網格數量（考慮實際可視區域）
         const gridCols = Math.floor((maxX - minX) / this.pixelSize);
         const gridRows = Math.floor((maxY - minY) / this.pixelSize);
         const totalGrids = gridCols * gridRows;
+
+        // 檢查是否有足夠的空間
+        if (totalGrids < 10) { // 假設至少需要 10 個格子的空間
+            console.warn('視窗空間不足');
+            return;
+        }
+
+        // 創建一個用於追蹤已使用位置的數組
+        const usedPositions = [];
+
+        // 生成所有正確答案的食物
+        this.correctFoods = [];
+        const currentGreeting = this.greetingsData[this.currentGreetingIndex];
         
-        // 確保有足夠的空間放置所有食物
-        const maxFoods = Math.min(wrongWords.length, totalGrids - this.snake.length - 1);
-        
-        // 生成所有干擾食物，確保位置不重疊
-        for (let i = 0; i < maxFoods; i++) {
-            let dx, dy;
+        // 初始化動畫狀態
+        this.foodAnimations = {
+            correct: [],
+            decoys: []
+        };
+
+        // 為每個正確字生成食物
+        for (const word of currentGreeting.words) {
+            let x, y;
             let attempts = 0;
             const maxAttempts = 100;
 
             do {
-                dx = Math.floor(Math.random() * gridCols) * this.pixelSize + minX;
-                dy = Math.floor(Math.random() * gridRows) * this.pixelSize + minY;
+                // 使用網格系統來生成位置
+                x = Math.floor(Math.random() * gridCols) * this.pixelSize + minX;
+                y = Math.floor(Math.random() * gridRows) * this.pixelSize + minY;
+                attempts++;
+                
+                if (attempts > maxAttempts) {
+                    console.warn('無法找到合適的食物位置');
+                    break;
+                }
+            } while (
+                this.snake.some(segment => 
+                    Math.hypot(segment.x - x, segment.y - y) < minFoodDistance
+                ) ||
+                usedPositions.some(pos => 
+                    Math.hypot(pos.x - x, pos.y - y) < minFoodDistance
+                )
+            );
+
+            const correctFood = {
+                x: x,
+                y: y,
+                word: word,
+                collected: false
+            };
+            
+            this.correctFoods.push(correctFood);
+            usedPositions.push({x: x, y: y});
+            
+            this.foodAnimations.correct.push({
+                rotation: 0,
+                isAnimating: false
+            });
+        }
+
+        // 生成干擾食物
+        this.decoyFoods = [];
+        const wrongWords = [...currentGreeting.wrong_words];
+        
+        // 計算可以放置的最大干擾食物數量
+        const maxFoods = Math.min(
+            wrongWords.length,
+            Math.floor((totalGrids - currentGreeting.words.length) / 4) // 每個食物需要 4 個格子的空間
+        );
+        
+        // 生成干擾食物
+        for (let i = 0; i < maxFoods; i++) {
+            let x, y;
+            let attempts = 0;
+            const maxAttempts = 100;
+
+            do {
+                x = Math.floor(Math.random() * gridCols) * this.pixelSize + minX;
+                y = Math.floor(Math.random() * gridRows) * this.pixelSize + minY;
                 attempts++;
                 
                 if (attempts > maxAttempts) {
@@ -215,17 +316,27 @@ class SnakeGame {
                     return;
                 }
             } while (
-                this.snake.some(segment => segment.x === dx && segment.y === dy) ||
-                this.isPositionOverlapping(dx, dy, usedPositions)
+                this.snake.some(segment => 
+                    Math.hypot(segment.x - x, segment.y - y) < minFoodDistance
+                ) ||
+                usedPositions.some(pos => 
+                    Math.hypot(pos.x - x, pos.y - y) < minFoodDistance
+                )
             );
 
-            usedPositions.push({x: dx, y: dy});
+            usedPositions.push({x: x, y: y});
             this.decoyFoods.push({
-                x: dx,
-                y: dy,
+                x: x,
+                y: y,
                 word: wrongWords[i]
             });
         }
+
+        // 為每個干擾食物添加動畫狀態
+        this.foodAnimations.decoys = this.decoyFoods.map(() => ({
+            rotation: 0,
+            isAnimating: false
+        }));
     }
 
     // 添加檢查位置是否重疊的方法
@@ -248,77 +359,332 @@ class SnakeGame {
     }
 
     draw() {
-        // 繪製純色背景
-        this.ctx.fillStyle = '#ebfcff';
+        // 清除畫布
+        this.ctx.fillStyle = '#fff';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // 繪製蛇
-        this.snake.forEach((segment, index) => {
-            this.ctx.fillStyle = index === 0 ? '#ff0000' : '#ffdd00';
-            this.ctx.fillRect(
-                segment.x,
-                segment.y,
-                this.pixelSize,
-                this.pixelSize
-            );
-        });
+        // 繪製蛇身
+        if (this.lastPosition) {
+            this.snake.forEach((segment, index) => {
+                const lastPos = this.lastPosition[index];
+                if (!lastPos) return;
 
-        // 繪製食物和文字
-        if (this.food && !this.foodEaten) {
-            // 繪製菱形背景
-            this.ctx.save();
-            this.ctx.translate(
-                this.food.x + this.pixelSize/2,
-                this.food.y + this.pixelSize/2
-            );
-            this.ctx.rotate(Math.PI / 4);
-            this.ctx.fillStyle = 'red';
-            const size = this.pixelSize * 1.5;
-            this.ctx.fillRect(-size/2, -size/2, size, size);
-            this.ctx.restore();
+                // 計算插值位置
+                const x = lastPos.x + (segment.x - lastPos.x) * this.animationProgress;
+                const y = lastPos.y + (segment.y - lastPos.y) * this.animationProgress;
 
-            // 繪製文字
-            this.ctx.fillStyle = '#fff';
-            this.ctx.font = '900 45px "Noto Sans TC"';
-            this.ctx.textAlign = 'center';
-            this.ctx.fillText(
-                this.food.word,
-                this.food.x + this.pixelSize/2,
-                this.food.y + this.pixelSize/2 + 8
-            );
+                this.ctx.fillStyle = index === 0 ? '#ff0000' : '#ffdd00';
+                this.ctx.fillRect(x, y, this.pixelSize, this.pixelSize);
+            });
         }
 
-        // 繪製干擾食物
-        if (this.decoyFoods) {  // 添加檢查
-            this.decoyFoods.forEach(decoy => {
-                // 繪製菱形背景
-                this.ctx.save();
-                this.ctx.translate(
-                    decoy.x + this.pixelSize/2,
-                    decoy.y + this.pixelSize/2
-                );
-                this.ctx.rotate(Math.PI / 4);
-                this.ctx.fillStyle = 'red';
-                const size = this.pixelSize * 1.5;
-                this.ctx.fillRect(-size/2, -size/2, size, size);
-                this.ctx.restore();
+        // 確保 correctFoods 存在才進行繪製
+        if (this.correctFoods && this.correctFoods.length > 0) {
+            this.correctFoods.forEach((food, index) => {
+                if (!food.collected) {
+                    this.drawFoodWithAnimation(
+                        food,
+                        this.foodAnimations.correct[index],
+                        this.snake[0]
+                    );
+                }
+            });
+        }
 
-                // 繪製文字
-                this.ctx.fillStyle = '#fff';
-                this.ctx.font = '900 45px "Noto Sans TC"';
-                this.ctx.textAlign = 'center';
-                this.ctx.fillText(
-                    decoy.word,
-                    decoy.x + this.pixelSize/2,
-                    decoy.y + this.pixelSize/2 + 8
+        // 確保 decoyFoods 存在才進行繪製
+        if (this.decoyFoods && this.decoyFoods.length > 0) {
+            this.decoyFoods.forEach((decoy, index) => {
+                this.drawFoodWithAnimation(
+                    decoy,
+                    this.foodAnimations.decoys[index],
+                    this.snake[0]
                 );
             });
         }
     }
 
-    move() {
-        const head = {...this.snake[0]};
+    // 修改：帶動畫效果的食物繪製方法
+    drawFoodWithAnimation(food, animation, snakeHead) {
+        // 確保 animation 存在
+        if (!animation) {
+            animation = {
+                rotation: 0,
+                isAnimating: false
+            };
+        }
 
+        // 檢查與蛇頭的距離
+        const dx = snakeHead.x - food.x;
+        const dy = snakeHead.y - food.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // 更新動畫狀態
+        if (distance < this.foodAnimationDistance) {
+            animation.isAnimating = true;
+            animation.rotation = Math.sin(Date.now() * 0.01) * 0.2;
+        } else {
+            animation.isAnimating = false;
+            animation.rotation = 0;
+        }
+
+        // 繪製圓形背景
+        this.ctx.save();
+        this.ctx.translate(
+            food.x + this.pixelSize/2,
+            food.y + this.pixelSize/2
+        );
+        this.ctx.rotate(animation.rotation);
+        
+        // 繪製圓形
+        this.ctx.beginPath();
+        this.ctx.arc(0, 0, this.pixelSize * 0.75, 0, Math.PI * 2);
+        this.ctx.fillStyle = 'red';
+        this.ctx.fill();
+        this.ctx.closePath();
+        
+        this.ctx.restore();
+
+        // 繪製文字
+        this.ctx.save();
+        this.ctx.translate(
+            food.x + this.pixelSize/2,
+            food.y + this.pixelSize/2
+        );
+        this.ctx.rotate(animation.rotation);
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = '900 45px "Noto Sans TC"';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(food.word, 0, 0);
+        this.ctx.restore();
+    }
+
+    move() {
+        // 在懲罰狀態下不移動
+        if (this.isPenalized) return;
+
+        this.animationProgress += this.moveSpeed;
+        
+        // 當動畫進度達到或超過1時，完成一次完整移動
+        if (this.animationProgress >= 1) {
+            this.completeMove();
+            this.animationProgress = 0;
+            this.lastPosition = JSON.parse(JSON.stringify(this.snake));
+        }
+
+        // 在每一幀都檢查碰撞
+        const head = this.getInterpolatedHeadPosition();
+        this.checkFoodCollision(head);
+    }
+
+    // 添加新方法：獲取插值後的蛇頭位置
+    getInterpolatedHeadPosition() {
+        const currentHead = this.snake[0];
+        const nextHead = {...currentHead};
+
+        switch(this.direction) {
+            case 'up': nextHead.y -= this.pixelSize; break;
+            case 'down': nextHead.y += this.pixelSize; break;
+            case 'left': nextHead.x -= this.pixelSize; break;
+            case 'right': nextHead.x += this.pixelSize; break;
+        }
+
+        // 處理邊界
+        if (nextHead.x < 0) nextHead.x = this.canvas.width - this.pixelSize;
+        else if (nextHead.x >= this.canvas.width) nextHead.x = 0;
+        if (nextHead.y < 0) nextHead.y = this.canvas.height - this.pixelSize;
+        else if (nextHead.y >= this.canvas.height) nextHead.y = 0;
+
+        // 計算插值位置
+        return {
+            x: currentHead.x + (nextHead.x - currentHead.x) * this.animationProgress,
+            y: currentHead.y + (nextHead.y - currentHead.y) * this.animationProgress
+        };
+    }
+
+    // 修改檢查食物碰撞的方法
+    checkFoodCollision(headPosition) {
+        if (this.isPenalized) return;
+
+        const head = {
+            x: headPosition.x,
+            y: headPosition.y,
+            width: this.pixelSize,
+            height: this.pixelSize
+        };
+
+        // 檢查正確食物碰撞
+        this.correctFoods.forEach((food, index) => {
+            if (food.collected) return;
+
+            const foodRect = {
+                x: food.x,
+                y: food.y,
+                width: this.pixelSize,
+                height: this.pixelSize
+            };
+
+            if (Collider2D.boxCollision(head, foodRect)) {
+                food.collected = true;
+                this.showCollectedWord(food.word, this.currentWords.indexOf(food.word));
+                this.score += 10;
+                
+                // 播放收集音效
+                this.sounds.collect.play();
+
+                // 檢查是否收集完所有正確字
+                if (this.correctFoods.every(f => f.collected)) {
+                    this.completedGreetings.push(this.currentWords.join(''));
+                    this.showCompletionAnimation(this.currentWords);
+                    
+                    // 播放完成音效
+                    this.sounds.complete.play();
+                    
+                    this.currentGreetingIndex++;
+                    
+                    // 增加蛇的長度
+                    this.growSnake();
+                    
+                    if (this.currentGreetingIndex >= this.greetingsData.length) {
+                        this.gameOver();
+                        return;
+                    }
+                    
+                    this.selectNextGreeting();
+                    this.spawnFood();
+                }
+            }
+        });
+
+        // 檢查干擾食物碰撞
+        if (this.decoyFoods && !this.isInvincible) { // 只在非無敵狀態下檢查干擾食物碰撞
+            this.decoyFoods.forEach((decoy, index) => {
+                const decoyRect = {
+                    x: decoy.x,
+                    y: decoy.y,
+                    width: this.pixelSize,
+                    height: this.pixelSize
+                };
+
+                if (Collider2D.boxCollision(head, decoyRect)) {
+                    this.handleWrongCollection();
+                }
+            });
+        }
+    }
+
+    // 新增：只生成正確答案的食物位置
+    spawnCorrectFood() {
+        const margin = this.pixelSize * 2;
+        const maxX = this.canvas.width - margin;
+        const minX = margin;
+        const maxY = this.canvas.height - margin;
+        const minY = margin + 80;
+        
+        const minFoodDistance = this.pixelSize * 4;
+        let x, y;
+        let attempts = 0;
+        const maxAttempts = 100;
+
+        // 收集所有需要避開的位置（包括干擾食物）
+        const usedPositions = this.decoyFoods.map(food => ({x: food.x, y: food.y}));
+
+        do {
+            x = Math.floor(Math.random() * ((maxX - minX) / this.pixelSize)) * this.pixelSize + minX;
+            y = Math.floor(Math.random() * ((maxY - minY) / this.pixelSize)) * this.pixelSize + minY;
+            attempts++;
+            
+            if (attempts > maxAttempts) {
+                console.warn('無法找到合適的食物位置');
+                break;
+            }
+        } while (
+            this.snake.some(segment => 
+                Math.hypot(segment.x - x, segment.y - y) < minFoodDistance
+            ) ||
+            usedPositions.some(pos => 
+                Math.hypot(pos.x - x, pos.y - y) < minFoodDistance
+            )
+        );
+
+        // 只更新正確答案的位置
+        this.food = {
+            x: x,
+            y: y,
+            word: this.currentWords[this.currentWordIndex]
+        };
+
+        // 更新主要食物的動畫狀態
+        this.foodAnimations.main = { rotation: 0, isAnimating: false };
+    }
+
+    // 修改蛇身碰撞檢測
+    checkCollision(head) {
+        const headArea = {
+            x: head.x,
+            y: head.y,
+            width: this.pixelSize,
+            height: this.pixelSize
+        };
+
+        return this.snake.some(segment => {
+            const segmentArea = {
+                x: segment.x,
+                y: segment.y,
+                width: this.pixelSize,
+                height: this.pixelSize
+            };
+            return Collider2D.boxCollision(headArea, segmentArea);
+        });
+    }
+
+    // 添加新方法：處理食物碰撞
+    handleFoodCollision() {
+        if (this.foodEaten) return;
+        
+        this.foodEaten = true;
+        if (this.food.word === this.currentWords[this.currentWordIndex]) {
+            this.showCollectedWord(this.food.word, this.currentWordIndex);
+            this.currentWordIndex++;
+            
+            if (this.currentWordIndex >= this.currentWords.length) {
+                this.score++;
+                this.completedGreetings.push(this.greetingsData[this.currentGreetingIndex].meaning);
+                this.showCompletionAnimation(this.currentWords);
+                
+                setTimeout(() => {
+                    this.clearCollectedWords();
+                }, 3000);
+                
+                this.currentGreetingIndex = (this.currentGreetingIndex + 1) % this.greetingsData.length;
+                this.currentWordIndex = 0;
+                this.selectNextGreeting();
+            }
+        } else {
+            this.clearCollectedWords();
+            this.currentWordIndex = 0;
+            this.updateWordDisplay();
+        }
+        
+        setTimeout(() => {
+            this.foodEaten = false;
+            this.spawnFood();
+        }, 200);
+    }
+
+    // 添加新方法：處理干擾食物碰撞
+    handleDecoyCollision() {
+        this.score = 0;
+        this.currentWordIndex = 0;
+        this.clearCollectedWords();
+        this.updateWordDisplay();
+        this.spawnFood();
+    }
+
+    // 修改 completeMove 方法
+    completeMove() {
+        const head = {...this.snake[0]};
+        
         switch(this.direction) {
             case 'up': head.y -= this.pixelSize; break;
             case 'down': head.y += this.pixelSize; break;
@@ -327,72 +693,19 @@ class SnakeGame {
         }
 
         // 處理邊界
-        if (head.x < 0) {
-            head.x = this.canvas.width - this.pixelSize;
-        } else if (head.x >= this.canvas.width) {
-            head.x = 0;
-        }
+        if (head.x < 0) head.x = this.canvas.width - this.pixelSize;
+        else if (head.x >= this.canvas.width) head.x = 0;
+        if (head.y < 0) head.y = this.canvas.height - this.pixelSize;
+        else if (head.y >= this.canvas.height) head.y = 0;
 
-        if (head.y < 0) {
-            head.y = this.canvas.height - this.pixelSize;
-        } else if (head.y >= this.canvas.height) {
-            head.y = 0;
-        }
-
-        if (this.snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+        // 當撞到自己時調用 gameOver
+        if (this.checkCollision(head)) {
             this.gameOver();
             return;
         }
 
         this.snake.unshift(head);
-
-        if (head.x === this.food.x && head.y === this.food.y && !this.foodEaten) {
-            this.foodEaten = true;
-            
-            if (this.food.word === this.currentWords[this.currentWordIndex]) {
-                this.showCollectedWord(this.food.word, this.currentWordIndex);
-                this.currentWordIndex++;
-                
-                if (this.currentWordIndex >= this.currentWords.length) {
-                    this.score++;
-                    this.completedGreetings.push(this.greetingsData[this.currentGreetingIndex].meaning);
-                    
-                    this.showCompletionAnimation(this.currentWords);
-                    
-                    setTimeout(() => {
-                        this.clearCollectedWords();
-                    }, 3000);
-                    
-                    this.currentGreetingIndex = (this.currentGreetingIndex + 1) % this.greetingsData.length;
-                    this.currentWordIndex = 0;
-                    this.selectNextGreeting();
-                }
-                
-                this.updateWordDisplay();
-            } else {
-                this.clearCollectedWords();
-                this.currentWordIndex = 0;
-                this.updateWordDisplay();
-            }
-            
-            setTimeout(() => {
-                this.foodEaten = false;
-                this.spawnFood();
-            }, 200);
-        } else if (this.decoyFoods.some(decoy => decoy.x === head.x && decoy.y === head.y)) {
-            this.score = 0;
-            this.currentWordIndex = 0;
-            this.completedWords = [];
-            this.updateScore();
-            this.updateWordDisplay();
-            this.spawnFood();
-        } else {
-            this.snake.pop();
-        }
-    }
-
-    checkCollision(head) {
-        return this.snake.some(segment => segment.x === head.x && segment.y === head.y);
+        this.snake.pop();
     }
 
     gameOver() {
@@ -400,12 +713,17 @@ class SnakeGame {
         clearInterval(this.gameLoop);
         clearInterval(this.timer);
         
+        // 總是顯示遊戲結果
         this.showGameResult();
+
         // 遊戲結束時顯示開始按鈕
         const startButton = document.getElementById('startButton');
         startButton.style.display = 'block';
         startButton.textContent = '開始遊戲';
         this.drawInitialScreen();
+
+        // 停止背景音樂
+        this.bgm.stop();
     }
 
     setupEventListeners() {
@@ -418,9 +736,7 @@ class SnakeGame {
             this.gameLoop = setInterval(() => {
                 this.move();
                 this.draw();
-            }, 200);
-            
-            document.getElementById('startButton').textContent = '重新開始';
+            }, this.frameInterval); // 使用新的幀間隔
         });
 
         document.addEventListener('keydown', (e) => {
@@ -472,7 +788,9 @@ class SnakeGame {
             if (timerText && timerBar) {
                 timerText.textContent = this.remainingTime;
                 const percentage = (this.remainingTime / this.gameTime) * 100;
-                timerBar.style.width = `${percentage}%`;
+                // 使用 transform 來縮短 timer bar
+                timerBar.style.transform = `scaleX(${percentage / 100})`;
+                timerBar.style.transformOrigin = 'left';
             }
 
             // 當時間少於 10 秒時添加警告效果
@@ -489,16 +807,7 @@ class SnakeGame {
 
     // 時間到方法
     timeUp() {
-        this.isGameOver = true;
-        clearInterval(this.gameLoop);
-        clearInterval(this.timer);
-        
-        this.showGameResult();
-        // 時間到時顯示開始按鈕
-        const startButton = document.getElementById('startButton');
-        startButton.style.display = 'block';
-        startButton.textContent = '開始遊戲';
-        this.drawInitialScreen();
+        this.gameOver();
     }
 
     // 添加顯示結果的方法
@@ -534,7 +843,7 @@ class SnakeGame {
             this.gameLoop = setInterval(() => {
                 this.move();
                 this.draw();
-            }, 200);
+            }, this.frameInterval);  // 這裡也使用 frameInterval
         };
     }
 
@@ -575,29 +884,46 @@ class SnakeGame {
 
     // 選擇下一組祝賀詞
     selectNextGreeting() {
+        const collectedWords = document.querySelector('.collected-words');
+        collectedWords.classList.add('changing');
+        
+        // 先更新當前詞組
         const greeting = this.greetingsData[this.currentGreetingIndex];
         this.words = greeting.words;
         this.currentWords = [...greeting.words];
         this.currentWordIndex = 0;
-        this.updateWordDisplay();
         
-        // 更新提示文字
-        this.collectedWordsElements.forEach((element, index) => {
-            // 移除之前的提示元素（如果存在）
-            const oldHint = element.querySelector('.hint');
-            if (oldHint) {
-                oldHint.remove();
-            }
-            
-            // 創建新的提示元素
-            const hint = document.createElement('div');
-            hint.className = 'hint';
-            hint.textContent = this.currentWords[index];  // 直接顯示目標字
-            element.appendChild(hint);
-            
-            // 重置狀態
-            element.classList.remove('active');
-        });
+        // 等待動畫完成後更新顯示
+        setTimeout(() => {
+            // 清空所有已收集的字
+            this.collectedWordsElements.forEach(element => {
+                const span = element.querySelector('span');
+                if (span) {
+                    span.textContent = '';
+                }
+                element.classList.remove('active', 'bounce');
+            });
+
+            // 更新提示文字
+            this.collectedWordsElements.forEach((element, index) => {
+                const oldHint = element.querySelector('.hint');
+                if (oldHint) {
+                    oldHint.remove();
+                }
+                
+                const hint = document.createElement('div');
+                hint.className = 'hint';
+                hint.textContent = this.currentWords[index];
+                element.appendChild(hint);
+                element.classList.remove('active');
+            });
+
+            // 重新生成食物
+            this.spawnFood();
+
+            // 恢復位置並顯示新內容
+            collectedWords.classList.remove('changing');
+        }, 500);
     }
 
     // 顯示收集到的字
@@ -630,24 +956,16 @@ class SnakeGame {
         // 設置完成的詞組
         phrase.textContent = words.join('');
         
-        // 顯示彈出視窗暫停遊戲
+        // 顯示彈出視窗但不暫停遊戲
         popup.classList.remove('hidden');
         void popup.offsetWidth;
         popup.classList.add('show');
-        this.pauseGame();
 
-        // 添加點擊事件來關閉彈出視窗
-        const closePopup = () => {
+        // 1秒後自動關閉彈出視窗
+        setTimeout(() => {
             popup.classList.remove('show');
             popup.classList.add('hidden');
-            this.resumeGame();
-            
-            // 移除事件監聽器
-            document.removeEventListener('click', closePopup);
-        };
-
-        // 添加點擊事件來關閉彈出視窗
-        document.addEventListener('click', closePopup);
+        }, 1000);
     }
 
     // 添加暫停遊戲方法
@@ -657,19 +975,143 @@ class SnakeGame {
             clearInterval(this.gameLoop);
             clearInterval(this.timer);
             this.pausedTimeRemaining = this.remainingTime;
+
+            // 暫停背景音樂
+            this.bgm.pause();
         }
     }
 
-    // 添加恢復遊戲方法
+    // 修改恢復遊戲方法
     resumeGame() {
         if (!this.isGameOver && this.isPaused) {
             this.isPaused = false;
             this.gameLoop = setInterval(() => {
                 this.move();
                 this.draw();
-            }, 200);
+            }, this.frameInterval);  // 使用 frameInterval 而不是固定值
             this.timer = setInterval(() => this.updateTimer(), 1000);
             this.remainingTime = this.pausedTimeRemaining;
+
+            // 恢復背景音樂
+            this.bgm.play();
+        }
+    }
+
+    initAudio() {
+        // 音效管理器
+        this.sounds = {
+            bgm: new Howl({
+                src: ['snd/theme-song.mp3'],
+                loop: true,
+                volume: 0.5,
+                autoplay: false
+            }),
+            collect: new Howl({
+                src: ['snd/drip.mp3'],
+                volume: 0.8,
+                autoplay: false
+            }),
+            complete: new Howl({  // 添加完成音效
+                src: ['snd/beep.mp3'],
+                volume: 0.8,
+                autoplay: false
+            })
+        };
+
+        // 為了保持兼容性，保留 bgm 引用
+        this.bgm = this.sounds.bgm;
+
+        // 添加音樂控制按鈕
+        this.createMusicControls();
+    }
+
+    // 修改音樂控制方法
+    createMusicControls() {
+        const musicBtn = document.createElement('button');
+        musicBtn.className = 'music-control';
+        musicBtn.innerHTML = '🔊';
+        musicBtn.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 20px;
+        `;
+
+        let isMuted = false;
+        musicBtn.onclick = () => {
+            if (isMuted) {
+                // 恢復所有音效
+                Object.values(this.sounds).forEach(sound => {
+                    sound.volume(sound === this.sounds.bgm ? 0.5 : 0.8);
+                });
+                musicBtn.innerHTML = '🔊';
+            } else {
+                // 靜音所有音效
+                Object.values(this.sounds).forEach(sound => {
+                    sound.volume(0);
+                });
+                musicBtn.innerHTML = '🔈';
+            }
+            isMuted = !isMuted;
+        };
+
+        document.body.appendChild(musicBtn);
+    }
+
+    // 新增：處理錯誤收集
+    handleWrongCollection() {
+        if (this.isInvincible) return;
+
+        // 設置懲罰和無敵狀態
+        this.isPenalized = true;
+        this.isInvincible = true;
+        
+        // 觸發閃光效果
+        this.flashOverlay.classList.add('active');
+        
+        // 1秒後恢復移動
+        setTimeout(() => {
+            this.isPenalized = false;
+            this.flashOverlay.classList.remove('active');
+        }, this.penaltyDuration);
+
+        // 2秒後恢復可被傷害狀態
+        setTimeout(() => {
+            this.isInvincible = false;
+        }, this.invincibleDuration);
+    }
+
+    // 新增：增加蛇的長度的方法
+    growSnake() {
+        // 獲取蛇尾的最後兩個段落
+        const lastSegment = this.snake[this.snake.length - 1];
+        const secondLastSegment = this.snake[this.snake.length - 2];
+
+        // 計算新段落的位置（在最後兩個段落的延長線上）
+        const newSegment = {
+            x: lastSegment.x + (lastSegment.x - secondLastSegment.x),
+            y: lastSegment.y + (lastSegment.y - secondLastSegment.y)
+        };
+
+        // 如果新段落超出邊界，進行調整
+        if (newSegment.x < 0) newSegment.x = this.canvas.width - this.pixelSize;
+        if (newSegment.x >= this.canvas.width) newSegment.x = 0;
+        if (newSegment.y < 0) newSegment.y = this.canvas.height - this.pixelSize;
+        if (newSegment.y >= this.canvas.height) newSegment.y = 0;
+
+        // 添加新段落到蛇身
+        this.snake.push(newSegment);
+        
+        // 更新 lastPosition 數組以包含新段落
+        if (this.lastPosition) {
+            this.lastPosition.push({...newSegment});
         }
     }
 }
