@@ -11,23 +11,18 @@
 <body>
     <div class="game-container">
         <div class="game-header">
-            <!-- <div class="word-sequence">
-                目標順序：<span id="wordSequence"></span>
-            </div> -->
             <div class="timer-container">
                 <div class="timer-text">60</div>
                 <div class="timer-bar"></div>
             </div>
-            <!-- <div class="score">分數：<span id="score">0</span></div> -->
+            <div class="collected-words">
+                <div id="word0" class="collected-word"><span></span></div>
+                <div id="word1" class="collected-word"><span></span></div>
+                <div id="word2" class="collected-word"><span></span></div>
+                <div id="word3" class="collected-word"><span></span></div>
+            </div>
         </div>
         
-        <div class="collected-words">
-            <div id="word0" class="collected-word"><span></span></div>
-            <div id="word1" class="collected-word"><span></span></div>
-            <div id="word2" class="collected-word"><span></span></div>
-            <div id="word3" class="collected-word"><span></span></div>
-        </div>
-
         <canvas id="gameCanvas"></canvas>
         
         <div id="gameResult" class="game-result hidden">
