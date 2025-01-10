@@ -32,21 +32,23 @@
         
         <div id="gameResult" class="game-result hidden">
             <h2>遊戲結束</h2>
-            <div class="score-display">
-                <div class="score-label">最終得分</div>
-                <div class="score-value"><span id="finalScore">0</span></div>
-            </div>
-            <div class="result-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>完成的祝賀詞</th>
-                        </tr>
-                    </thead>
-                    <tbody id="completedWordsList">
-                        <!-- 動態填充 -->
-                    </tbody>
-                </table>
+            <div class="score-result-container">
+                <div class="score-display">
+                    <div class="score-label">完成了祝賀詞</div>
+                    <div class="score-value"><span id="finalScore">0</span></div>
+                </div>
+                <div class="result-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>你完成的祝賀詞</th>
+                            </tr>
+                        </thead>
+                        <tbody id="completedWordsList">
+                            <!-- 動態填充 -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <button class="restart-button">重新開始</button>
         </div>
@@ -69,5 +71,6 @@
     </div>
     <script src="game.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 </body>
 </html>

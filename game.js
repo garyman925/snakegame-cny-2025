@@ -178,6 +178,27 @@ class SnakeGame {
 
         // 初始化時隱藏遊戲界面元素
         document.querySelector('.game-container').classList.remove('game-started');
+
+        // 加載蛇頭、蛇身和蛇尾圖片
+        this.snakeHead = new Image();
+        this.snakeHead.src = 'img/head.png';
+        this.snakeBody = new Image();
+        this.snakeBody.src = 'img/body.png';
+        this.snakeTail = new Image();
+        this.snakeTail.src = 'img/tail.png';
+
+        // 等待所有圖片都加載完成
+        Promise.all([
+            new Promise(resolve => this.snakeHead.onload = resolve),
+            new Promise(resolve => this.snakeBody.onload = resolve),
+            new Promise(resolve => this.snakeTail.onload = resolve)
+        ]).then(() => {
+            if (!this.isGameOver) {
+                this.draw();
+            } else {
+                this.drawInitialScreen();
+            }
+        });
     }
 
     drawInitialScreen() {
@@ -452,23 +473,106 @@ class SnakeGame {
         // 繪製背景
         this.drawBackground();
         
-        // 不需要再次清除畫布，因為 drawBackground 已經處理了背景
-        // this.ctx.fillStyle = '#ffe9dc';
-        // this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        
         // 繪製蛇身
         if (this.lastPosition) {
-            this.snake.forEach((segment, index) => {
-                const lastPos = this.lastPosition[index];
-                if (!lastPos) return;
+            // 先繪製蛇尾
+            const tail = this.snake[this.snake.length - 1];
+            const prevTail = this.snake[this.snake.length - 2];
+            const lastTail = this.lastPosition[this.lastPosition.length - 1];
+            
+            if (lastTail && prevTail) {
+                const x = lastTail.x + (tail.x - lastTail.x) * this.animationProgress;
+                const y = lastTail.y + (tail.y - lastTail.y) * this.animationProgress;
 
-                // 計算插值位置
+                this.ctx.save();
+                this.ctx.translate(x + this.pixelSize/2, y + this.pixelSize/2);
+                
+                // 計算尾巴的旋轉角度（朝向前一個身體段落）並加上 90 度基礎旋轉
+                const dx = prevTail.x - tail.x;
+                const dy = prevTail.y - tail.y;
+                const rotation = Math.atan2(dy, dx) + Math.PI/2; // 加上 90 度基礎旋轉
+                this.ctx.rotate(rotation);
+                
+                // 繪製蛇尾
+                this.ctx.drawImage(
+                    this.snakeTail,
+                    -this.pixelSize/2,
+                    -this.pixelSize/2,
+                    this.pixelSize,
+                    this.pixelSize
+                );
+                
+                this.ctx.restore();
+            }
+
+            // 繪製蛇身（除了頭部和尾部）
+            for (let i = this.snake.length - 2; i > 0; i--) {
+                const segment = this.snake[i];
+                const lastPos = this.lastPosition[i];
+                if (!lastPos) continue;
+
                 const x = lastPos.x + (segment.x - lastPos.x) * this.animationProgress;
                 const y = lastPos.y + (segment.y - lastPos.y) * this.animationProgress;
 
-                this.ctx.fillStyle = index === 0 ? '#ff0000' : '#ffdd00';
-                this.ctx.fillRect(x, y, this.pixelSize, this.pixelSize);
-            });
+                this.ctx.save();
+                this.ctx.translate(x + this.pixelSize/2, y + this.pixelSize/2);
+                
+                // 計算蛇身段落的旋轉角度
+                const nextSegment = this.snake[i - 1];
+                const dx = nextSegment.x - segment.x;
+                const dy = nextSegment.y - segment.y;
+                const rotation = Math.atan2(dy, dx);
+                
+                this.ctx.rotate(rotation);
+                
+                // 繪製蛇身圖片
+                this.ctx.drawImage(
+                    this.snakeBody,
+                    -this.pixelSize/2,
+                    -this.pixelSize/2,
+                    this.pixelSize,
+                    this.pixelSize
+                );
+                
+                this.ctx.restore();
+            }
+
+            // 繪製蛇頭
+            const head = this.snake[0];
+            const lastHead = this.lastPosition[0];
+            if (lastHead) {
+                const x = lastHead.x + (head.x - lastHead.x) * this.animationProgress;
+                const y = lastHead.y + (head.y - lastHead.y) * this.animationProgress;
+
+                this.ctx.save();
+                // 移動到蛇頭中心點，稍微向下偏移以遮蓋接駁部分
+                this.ctx.translate(
+                    x + this.pixelSize/2, 
+                    y + this.pixelSize/2 + this.pixelSize * 0.1 // 向下偏移 10%
+                );
+                
+                // 根據方向旋轉，加上 90 度的基礎旋轉
+                let rotation = Math.PI/2; // 基礎旋轉 90 度
+                switch(this.direction) {
+                    case 'up': rotation += -Math.PI/2; break;
+                    case 'down': rotation += Math.PI/2; break;
+                    case 'left': rotation += Math.PI; break;
+                    case 'right': rotation += 0; break;
+                }
+                this.ctx.rotate(rotation);
+                
+                // 繪製蛇頭圖片，放大 20% 並調整偏移以保持中心點
+                const headSize = this.pixelSize * 1.4; // 放大 20%
+                this.ctx.drawImage(
+                    this.snakeHead,
+                    -headSize/2,
+                    -headSize/2,
+                    headSize,
+                    headSize
+                );
+                
+                this.ctx.restore();
+            }
         }
 
         // 確保 correctFoods 存在才進行繪製
@@ -619,7 +723,7 @@ class SnakeGame {
 
             if (Collider2D.boxCollision(head, foodRect)) {
                 food.collected = true;
-                this.showCollectedWord(food.word, this.currentWords.indexOf(food.word));
+                this.showCollectedWord(food.word, index);
                 this.score += 10;
                 
                 // 播放收集音效
@@ -907,7 +1011,10 @@ class SnakeGame {
 
     // 添加顯示結果的方法
     showGameResult() {
-        document.getElementById('finalScore').textContent = this.score;
+        const finalScoreElement = document.getElementById('finalScore');
+        finalScoreElement.textContent = '0';
+        
+        document.getElementById('completedWordsList').innerHTML = '';
         
         const tbody = document.getElementById('completedWordsList');
         tbody.innerHTML = ''; // 清空現有內容
@@ -930,6 +1037,18 @@ class SnakeGame {
         
         this.resultElement.classList.remove('hidden');
 
+        // 添加分數動畫
+        anime({
+            targets: finalScoreElement,
+            innerHTML: [0, this.score],
+            round: 1,
+            easing: 'easeInOutExpo',
+            duration: 2000,
+            update: function(anim) {
+                finalScoreElement.classList.toggle('jump', anim.progress % 20 < 10);
+            }
+        });
+
         // 添加重新開始按鈕的事件監聽
         const restartButton = this.resultElement.querySelector('.restart-button');
         restartButton.onclick = () => {
@@ -938,7 +1057,7 @@ class SnakeGame {
             this.gameLoop = setInterval(() => {
                 this.move();
                 this.draw();
-            }, this.frameInterval);  // 這裡也使用 frameInterval
+            }, this.frameInterval);
         };
     }
 
