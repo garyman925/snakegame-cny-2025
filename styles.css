@@ -80,7 +80,7 @@ body {
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    display: none;
+    display: none !important; /* 強制隱藏箭頭按鈕 */
     flex-direction: column;
     align-items: center;
     gap: 10px;
@@ -109,6 +109,126 @@ body {
     
     #gameCanvas {
         max-width: 100%;
+    }
+
+    /* 隱藏時間條，只顯示數字 */
+    .timer-bar {
+        display: none;
+    }
+
+
+    /* 調整收集字的間距 */
+    .collected-words {
+        gap: 20px !important; /* 從 60px 減少到 20px */
+        margin-right: 0 !important; /* 減少右邊距 */
+        margin-right: 0 !important;
+        transform: translateY(20px) !important;
+    }
+
+    /* 遊戲結束畫面改為垂直排列 */
+    .game-result {
+        min-width: 90vw; /* 改用視窗寬度的 90% */
+        padding: 20px;
+    }
+
+    .score-result-container {
+        flex-direction: column !important;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .score-display {
+        flex: none;
+        width: 100%;
+    }
+
+    .result-table {
+        width: 100%;
+        margin-top: 10px;
+        max-height: 300px;
+    }
+
+    /* 調整標題大小 */
+    .game-result h2 {
+        font-size: 2em;
+    }
+
+    /* 調整分數顯示 */
+    .score-value {
+        font-size: 4rem;
+    }
+
+    .game-header {
+        flex-direction: column;
+        height: auto;
+        align-items: center;
+        padding: 5px;
+        gap: 0 !important;
+        top: 0 !important;
+    }
+
+
+    .timer-container {
+        order: 2; /* 放在下面 */
+        justify-content: center;
+        padding: 0;
+    }
+
+    .timer-text {
+        font-size: 2.5rem;
+        min-width: auto;
+    }
+
+    /* 調整收集字的大小 */
+    .collected-word {
+        width: 50px;
+        height: 50px;
+        font-size: 2rem;
+    }
+
+    .collected-word::before {
+        border-width: 4px;
+    }
+}
+
+/* 針對更小的螢幕做額外調整 */
+@media (max-width: 375px) {
+    .collected-words {
+        gap: 15px;
+        margin-right: 40px;
+    }
+
+    .collected-word {
+        width: 50px;
+        height: 50px;
+        font-size: 2rem;
+    }
+
+    .collected-word .hint {
+        font-size: 2rem;
+    }
+
+    .timer-text {
+        font-size: 2.5rem;
+    }
+
+    .game-header {
+        top: 10px;
+        gap: 0 !important;
+    }
+
+    .collected-words {
+        gap: 15px;
+    }
+
+    .collected-word {
+        width: 45px;
+        height: 45px;
+        font-size: 1.8rem;
+    }
+
+    .timer-text {
+        font-size: 2rem;
     }
 }
 
@@ -152,7 +272,6 @@ body {
     transform: translate(-50%, -50%);
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
     z-index: 1000;
-    min-width: 800px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -161,16 +280,13 @@ body {
 
 .score-result-container {
     display: flex;
-    flex-direction: row;
     align-items: start;
     gap: 20px;
 }
 
 .game-result h2 {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
+    position: relative;
+    text-align: center;
     color: #ff0000;
     margin-bottom: 20px;
     font-size: 2.5em;
@@ -179,7 +295,6 @@ body {
 
 .score-display {
     flex: 0 0 300px;
-    margin-top: 80px;
     padding: 20px;
     background: linear-gradient(45deg, #ff0000, #ff4444);
     border-radius: 15px;
@@ -214,7 +329,6 @@ body {
 
 .result-table {
     flex: 1;
-    margin-top: 80px;
     overflow: hidden;
     border-radius: 15px;
     max-height: 400px;

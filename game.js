@@ -199,6 +199,9 @@ class SnakeGame {
                 this.drawInitialScreen();
             }
         });
+
+        // 添加觸控事件監聽
+        this.setupTouchControls();
     }
 
     drawInitialScreen() {
@@ -939,41 +942,25 @@ class SnakeGame {
         });
 
         document.addEventListener('keydown', (e) => {
+            if (this.isGameOver) return;
+            
             switch(e.key) {
-                case 'ArrowUp': if (this.direction !== 'down') this.direction = 'up'; break;
-                case 'ArrowDown': if (this.direction !== 'up') this.direction = 'down'; break;
-                case 'ArrowLeft': if (this.direction !== 'right') this.direction = 'left'; break;
-                case 'ArrowRight': if (this.direction !== 'left') this.direction = 'right'; break;
-                // 添加 'End' 鍵作為快捷鍵
-                case 'End':
-                    if (!this.isGameOver) {
-                        this.score = 999; // 測試用分數
-                        this.completedWords = ['龍', '馬', '精', '神']; // 測試用完成詞組
-                        this.gameOver();
-                    }
+                case 'ArrowUp':
+                    if (this.direction !== 'down') this.direction = 'up';
                     break;
-                // 添加 'P' 鍵作為測試彈出視窗的快捷鍵
-                case 'p':
-                case 'P':
-                    if (!this.isGameOver) {
-                        this.showCompletionAnimation(['龍', '馬', '精', '神']);
-                    }
+                case 'ArrowDown':
+                    if (this.direction !== 'up') this.direction = 'down';
+                    break;
+                case 'ArrowLeft':
+                    if (this.direction !== 'right') this.direction = 'left';
+                    break;
+                case 'ArrowRight':
+                    if (this.direction !== 'left') this.direction = 'right';
                     break;
             }
         });
 
-        document.getElementById('upButton').addEventListener('click', () => {
-            if (this.direction !== 'down') this.direction = 'up';
-        });
-        document.getElementById('downButton').addEventListener('click', () => {
-            if (this.direction !== 'up') this.direction = 'down';
-        });
-        document.getElementById('leftButton').addEventListener('click', () => {
-            if (this.direction !== 'right') this.direction = 'left';
-        });
-        document.getElementById('rightButton').addEventListener('click', () => {
-            if (this.direction !== 'left') this.direction = 'right';
-        });
+        // 其他事件監聽保持不變...
     }
 
     // 添加計時器更新方法
@@ -1296,6 +1283,57 @@ class SnakeGame {
             this.ctx.fillStyle = this.pattern;
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
+    }
+
+    setupTouchControls() {
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // 防止滾動
+            if (this.isGameOver) return;
+
+            const touch = e.touches[0];
+            const rect = this.canvas.getBoundingClientRect();
+            
+            // 獲取觸控點相對於畫布的位置
+            const touchX = touch.clientX - rect.left;
+            const touchY = touch.clientY - rect.top;
+            
+            // 獲取蛇頭位置
+            const head = this.snake[0];
+            const headCenterX = head.x + this.pixelSize/2;
+            const headCenterY = head.y + this.pixelSize/2;
+            
+            // 計算觸控點與蛇頭的相對位置
+            const deltaX = touchX - headCenterX;
+            const deltaY = touchY - headCenterY;
+            
+            // 根據觸控點與蛇頭的相對位置決定方向
+            // 使用絕對值比較來決定主要方向
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                // 水平移動優先
+                if (deltaX > 0 && this.direction !== 'left') {
+                    this.direction = 'right';
+                } else if (deltaX < 0 && this.direction !== 'right') {
+                    this.direction = 'left';
+                }
+            } else {
+                // 垂直移動優先
+                if (deltaY > 0 && this.direction !== 'up') {
+                    this.direction = 'down';
+                } else if (deltaY < 0 && this.direction !== 'down') {
+                    this.direction = 'up';
+                }
+            }
+        });
+
+        // 添加觸控移動事件（可選，用於持續追蹤手指移動）
+        this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault(); // 防止滾動
+        });
+
+        // 防止 iOS Safari 的橡皮筋效果
+        document.body.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        }, { passive: false });
     }
 }
 
