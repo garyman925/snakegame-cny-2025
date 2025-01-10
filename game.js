@@ -150,21 +150,45 @@ class SnakeGame {
         this.flashOverlay = document.createElement('div');
         this.flashOverlay.className = 'flash-overlay';
         document.body.appendChild(this.flashOverlay);
+
+        // 加載背景圖案
+        this.backgroundPattern = new Image();
+        this.backgroundPattern.src = 'img/flower.png';
+        this.backgroundPattern.onload = () => {
+            // 創建半透明的圖案
+            const patternCanvas = document.createElement('canvas');
+            const patternContext = patternCanvas.getContext('2d');
+            patternCanvas.width = this.backgroundPattern.width;
+            patternCanvas.height = this.backgroundPattern.height;
+            
+            // 繪製原圖並設置透明度
+            patternContext.globalAlpha = 0.02 // 設置透明度
+            patternContext.drawImage(this.backgroundPattern, 0, 0);
+            
+            // 創建圖案
+            this.pattern = this.ctx.createPattern(patternCanvas, 'repeat');
+            
+            // 重新繪製畫面
+            if (!this.isGameOver) {
+                this.draw();
+            } else {
+                this.drawInitialScreen();
+            }
+        };
     }
 
     drawInitialScreen() {
-        // 繪製純色背景
-        this.ctx.fillStyle = '#fff';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        // 繪製背景
+        this.drawBackground();
         
         // 繪製文字
-        this.ctx.fillStyle = '#000';
+        this.ctx.fillStyle = '#ffe9dc';
         this.ctx.font = '20px Arial';
         this.ctx.textAlign = 'center';
     }
 
     initializeGame() {
-        // 初始化蛇的位置（使用像素）
+        // 重置蛇的位置
         this.snake = [
             {x: 100, y: 50},
             {x: 50, y: 50},
@@ -174,6 +198,22 @@ class SnakeGame {
         this.score = 0;
         this.currentWordIndex = 0;
         this.isGameOver = false;
+
+        // 重新創建背景圖案（確保在遊戲中也能看到）
+        if (this.backgroundPattern.complete) {
+            const patternCanvas = document.createElement('canvas');
+            const patternContext = patternCanvas.getContext('2d');
+            patternCanvas.width = this.backgroundPattern.width;
+            patternCanvas.height = this.backgroundPattern.height;
+            
+            // 繪製原圖並設置透明度
+            patternContext.globalAlpha = 0.02;
+            patternContext.drawImage(this.backgroundPattern, 0, 0);
+            
+            // 重新創建圖案
+            this.pattern = this.ctx.createPattern(patternCanvas, 'repeat');
+        }
+
         this.spawnFood();
         this.remainingTime = this.gameTime;
         this.completedWords = [];
@@ -359,9 +399,12 @@ class SnakeGame {
     }
 
     draw() {
-        // 清除畫布
-        this.ctx.fillStyle = '#fff';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        // 繪製背景
+        this.drawBackground();
+        
+        // 不需要再次清除畫布，因為 drawBackground 已經處理了背景
+        // this.ctx.fillStyle = '#ffe9dc';
+        // this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
         // 繪製蛇身
         if (this.lastPosition) {
@@ -1112,6 +1155,19 @@ class SnakeGame {
         // 更新 lastPosition 數組以包含新段落
         if (this.lastPosition) {
             this.lastPosition.push({...newSegment});
+        }
+    }
+
+    // 修改繪製背景的方法
+    drawBackground() {
+        // 先繪製純色背景
+        this.ctx.fillStyle = '#ffe9dc';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // 如果圖案已加載完成，繪製圖案
+        if (this.pattern) {
+            this.ctx.fillStyle = this.pattern;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
     }
 }
