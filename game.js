@@ -357,7 +357,9 @@ class SnakeGame {
             bgm: new Howl({
                 src: ['snd/theme-song.mp3'],
                 loop: true,
-                volume: 0.5
+                volume: 0.5,
+                rate: 1.0,  // 添加初始速率
+                autoplay: false
             }),
             collect: new Howl({
                 src: ['snd/drip.mp3'],
@@ -376,13 +378,20 @@ class SnakeGame {
                 volume: 0.8,
                 rate: 1.0
             }),
-            // 添加轉向音效
             turn: new Howl({
                 src: ['snd/turn.mp3'],
                 volume: 0.5
             }),
-            crash: new Howl({ src: ['snd/crash.mp3'] })  // 添加新的音效
+            crash: new Howl({ 
+                src: ['snd/crash.mp3'] 
+            })
         };
+
+        // 為了保持兼容性，保留 bgm 引用
+        this.bgm = this.sounds.bgm;
+
+        // 添加音樂控制按鈕
+        this.createMusicControls();
 
         // 添加 debug 相關屬性
         this.isDebugging = false;
@@ -781,6 +790,25 @@ class SnakeGame {
 
         // 處理連擊效果
         if (this.combo > 1) {
+            // 使用傳入的座標而不是 food 的座標
+            this.showComboEffect(x, y, this.combo);
+            
+            // 計算音調（每次提高 0.2，最高到 2.0）
+            const pitchRate = Math.min(1.0 + (this.combo - 1) * 0.2, 2.0);
+            
+            // 創建新的音效實例以確保可以重疊播放
+            const comboSound = new Howl({
+                src: ['snd/combo.mp3'],
+                volume: 0.8,
+                rate: pitchRate
+            });
+            
+            comboSound.play();
+
+            // 加快背景音樂
+            const bgmRate = Math.min(1.0 + (this.combo - 1) * 0.1, 1.5); // 最多加快 50%
+            this.bgm.rate(bgmRate);  // 使用 this.bgm 而不是 this.sounds.bgm
+
             // 顯示 Combo Time 提示
             let comboIndicator = document.querySelector('.combo-indicator');
             if (!comboIndicator) {
@@ -796,6 +824,8 @@ class SnakeGame {
             if (comboIndicator) {
                 comboIndicator.classList.remove('active');
             }
+            // 恢復背景音樂速度
+            this.bgm.rate(1.0);
         }
     }
 
@@ -1124,7 +1154,7 @@ class SnakeGame {
 
                     // 加快背景音樂
                     const bgmRate = Math.min(1.0 + (this.combo - 1) * 0.1, 1.5); // 最多加快 50%
-                    this.sounds.bgm.rate(bgmRate);
+                    this.bgm.rate(bgmRate);  // 使用 this.bgm 而不是 this.sounds.bgm
                 }
 
                 // 增加蛇的速度
@@ -1583,17 +1613,16 @@ class SnakeGame {
                 src: ['snd/theme-song.mp3'],
                 loop: true,
                 volume: 0.5,
+                rate: 1.0,  // 添加初始速率
                 autoplay: false
             }),
             collect: new Howl({
                 src: ['snd/drip.mp3'],
-                volume: 0.8,
-                autoplay: false
+                volume: 0.8
             }),
             complete: new Howl({
                 src: ['snd/beep.mp3'],
-                volume: 0.8,
-                autoplay: false
+                volume: 0.8
             }),
             powerup: new Howl({
                 src: ['snd/speed-up.mp3'],
@@ -1601,21 +1630,20 @@ class SnakeGame {
             }),
             combo: new Howl({
                 src: ['snd/combo.mp3'],
-                rate: 1.0  // 初始音調
+                volume: 0.8,
+                rate: 1.0
             }),
-            // 添加轉向音效
             turn: new Howl({
                 src: ['snd/turn.mp3'],
                 volume: 0.5
             }),
-            crash: new Howl({ src: ['snd/crash.mp3'] })  // 添加新的音效
+            crash: new Howl({ 
+                src: ['snd/crash.mp3'] 
+            })
         };
 
         // 為了保持兼容性，保留 bgm 引用
         this.bgm = this.sounds.bgm;
-
-        // 添加音樂控制按鈕
-        this.createMusicControls();
     }
 
     // 修改音樂控制方法
@@ -1691,7 +1719,7 @@ class SnakeGame {
         }
 
         // 恢復背景音樂到正常速度和音調
-        this.sounds.bgm.rate(1.0);
+        this.bgm.rate(1.0);
     }
 
     // 新增：增加蛇的長度的方法
