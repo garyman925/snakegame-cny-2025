@@ -14,6 +14,11 @@
             <div class="game-logo">
                 <img src="img/game-logo.png" alt="遊戲標誌">
             </div>
+            <div class="difficulty-select">
+                <button class="difficulty-btn" data-difficulty="EASY">簡單</button>
+                <button class="difficulty-btn" data-difficulty="NORMAL">普通</button>
+                <button class="difficulty-btn" data-difficulty="HARD">困難</button>
+            </div>
             <button id="startButton">開始遊戲</button>
         </div>
         <div class="game-header">
@@ -21,11 +26,17 @@
                 <div class="timer-text">120</div>
                 <div class="timer-bar"></div>
             </div>
+          
             <div class="collected-words">
                 <div id="word0" class="collected-word"><span></span></div>
                 <div id="word1" class="collected-word"><span></span></div>
                 <div id="word2" class="collected-word"><span></span></div>
                 <div id="word3" class="collected-word"><span></span></div>
+            </div>
+
+            <div class="score-container">
+                <div class="score-label">分數</div>
+                <div class="current-score">0</div>
             </div>
         </div>
         
@@ -72,5 +83,8 @@
     <script src="game.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.x/dist/pixi.min.js"></script>
 </body>
 </html>
