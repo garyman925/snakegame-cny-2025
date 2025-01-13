@@ -16,8 +16,72 @@ class Collider2D {
 
 class SnakeGame {
     constructor() {
+        // 首先初始化基本屬性
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
+        
+        // 初始化道具系統相關屬性（移到最前面）
+        this.powerUps = [];  // 初始化道具陣列
+        this.powerUpImages = {};  // 初始化道具圖片容器
+        this.activePowerUps = new Map();  // 初始化活動道具
+        this.powerUpSpawnInterval = 10000; // 每10秒生成一個道具
+        this.lastPowerUpSpawn = 0;
+        this.isTimeFrozen = false;
+        this.frozenTimeRemaining = 0;
+        this.speedMultiplier = 1;
+        this.isInvincible = false;
+
+        // 定義道具類型
+        this.powerUpTypes = {
+            SPEED: {
+                name: '加速',
+                color: '#ffff00',
+                duration: 5000,
+                image: 'img/tool-flash.png',
+                effect: () => {
+                    this.speedMultiplier = 1.5;
+                    this.sounds.powerup.play();
+                },
+                reset: () => {
+                    this.speedMultiplier = 1;
+                }
+            },
+            INVINCIBLE: {
+                name: '無敵',
+                color: '#ff00ff',
+                duration: 3000,
+                image: 'img/tool-star.png',
+                effect: () => {
+                    this.isInvincible = true;
+                    this.sounds.powerup.play();
+                },
+                reset: () => {
+                    this.isInvincible = false;
+                }
+            },
+            TIME_FREEZE: {
+                name: '時間暫停',
+                color: '#00ffff',
+                duration: 3000,
+                image: 'img/tool-timer.png',
+                effect: () => {
+                    this.isTimeFrozen = true;
+                    this.sounds.powerup.play();
+                    this.frozenTimeRemaining = this.endTime - Date.now();
+                },
+                reset: () => {
+                    this.isTimeFrozen = false;
+                    this.endTime = Date.now() + this.frozenTimeRemaining;
+                }
+            }
+        };
+
+        // 加載道具圖片
+        Object.entries(this.powerUpTypes).forEach(([type, config]) => {
+            const img = new Image();
+            img.src = config.image;
+            this.powerUpImages[type] = img;
+        });
         
         // 檢測是否為移動設備
         this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -54,8 +118,9 @@ class SnakeGame {
         this.decoyFoods = [];
 
         // 修改計時相關的屬性
-        this.gameTime = 120; // 改為 120 秒
-        this.remainingTime = this.gameTime;
+        this.gameDuration = 120; // 遊戲時長（秒）
+        this.endTime = 0; // 遊戲結束時間點
+        this.remainingTime = this.gameDuration;
         this.timer = null;
         this.completedWords = []; // 記錄完成的祝賀詞
 
@@ -100,30 +165,29 @@ class SnakeGame {
 
         // 修改更新時間的函數
         function updateTimer() {
-            if (this.remainingTime > 0) {
-                this.remainingTime--;
-                // 更新新的計時器顯示
-                const timerText = document.querySelector('.timer-text');
-                const timerBar = document.querySelector('.timer-bar');
-                
-                if (timerText && timerBar) {
-                    timerText.textContent = this.remainingTime;
-                    const percentage = (this.remainingTime / this.gameTime) * 100;
-                    // 使用 transform 來縮短 timer bar
-                    timerBar.style.transform = `scaleX(${percentage / 100})`;
-                    timerBar.style.transformOrigin = 'left';
-                }
+            const timeLeft = Math.max(0, this.endTime - Date.now());
+            const totalTime = this.gameDuration * 1000;
+            const percentage = timeLeft / totalTime;
 
-                // 當時間少於 10 秒時添加警告效果
-                if (this.remainingTime <= 10) {
-                    timerText.classList.add('warning');
-                    timerBar.classList.add('warning');
-                }
+            // 更新時間文字
+            const seconds = Math.ceil(timeLeft / 1000);
+            const timerText = document.querySelector('.timer-text');
+            timerText.textContent = seconds;
 
-                if (this.remainingTime <= 0) {
-                    this.timeUp();
-                }
+            // 更新計時條
+            const timerBar = document.querySelector('.timer-bar');
+            timerBar.style.transform = `scaleY(${percentage})`; // 使用 scaleY 來從下往上減少
+
+            // 當時間少於 30 秒時添加警告效果
+            if (seconds <= 30) {
+                timerBar.classList.add('warning');
+                timerText.classList.add('warning');
+            } else {
+                timerBar.classList.remove('warning');
+                timerText.classList.remove('warning');
             }
+
+            return timeLeft;
         }
 
         // 添加動畫相關屬性
@@ -151,7 +215,6 @@ class SnakeGame {
 
         // 添加懲罰相關屬性
         this.isPenalized = false;
-        this.isInvincible = false;
         this.penaltyDuration = 1000; // 1秒懲罰時間
         this.invincibleDuration = 2000; // 2秒無敵時間
         
@@ -243,53 +306,6 @@ class SnakeGame {
         this.glowDuration = 500; // 發光持續時間（毫秒）
         this.glowStartTime = 0;
 
-        // 遊戲難度相關
-        this.speedMultiplier = 1;
-        this.isInvincible = false;
-
-        // 道具系統相關
-        this.powerUps = [];
-        this.powerUpTypes = {
-            SPEED: {
-                name: '加速',
-                color: '#ffff00',
-                duration: 5000,
-                effect: () => {
-                    this.speedMultiplier = 1.5;
-                },
-                reset: () => {
-                    this.speedMultiplier = 1;
-                }
-            },
-            INVINCIBLE: {
-                name: '無敵',
-                color: '#ff00ff',
-                duration: 3000,
-                effect: () => {
-                    this.isInvincible = true;
-                },
-                reset: () => {
-                    this.isInvincible = false;
-                }
-            },
-            SCORE_BOOST: {
-                name: '分數加倍',
-                color: '#00ffff',
-                duration: 4000,
-                effect: () => {
-                    this.scoreMultiplier = 2;
-                },
-                reset: () => {
-                    this.scoreMultiplier = 1;
-                }
-            }
-        };
-
-        this.activePowerUps = new Map(); // 儲存當前生效的道具
-        this.powerUpSpawnInterval = 10000; // 每10秒生成一個道具
-        this.lastPowerUpSpawn = 0;
-        this.scoreMultiplier = 1;
-
         // 添加難度相關設置
         this.difficulties = {
             EASY: {
@@ -364,7 +380,8 @@ class SnakeGame {
             turn: new Howl({
                 src: ['snd/turn.mp3'],
                 volume: 0.5
-            })
+            }),
+            crash: new Howl({ src: ['snd/crash.mp3'] })  // 添加新的音效
         };
 
         // 添加 debug 相關屬性
@@ -376,6 +393,11 @@ class SnakeGame {
             combo: 0,
             score: 0
         };
+
+        // 添加下一頁按鈕事件監聽
+        document.querySelector('.next-page-button').addEventListener('click', () => {
+            this.toggleResultPage();
+        });
     }
 
     drawInitialScreen() {
@@ -417,17 +439,24 @@ class SnakeGame {
         }
 
         // 重置遊戲狀態
-        this.remainingTime = this.gameTime;
+        this.remainingTime = this.gameDuration;
         this.completedWords = [];
         this.currentGreetingIndex = 0;
         this.completedGreetings = [];
+        
+        // 設置遊戲結束時間
+        this.endTime = Date.now() + (this.gameDuration * 1000);
         
         // 開始計時
         if (this.timer) {
             clearInterval(this.timer);
         }
-        this.timer = setInterval(() => this.updateTimer(), 1000);
-        this.updateTimer();
+        this.timer = setInterval(() => {
+            const timeLeft = this.updateTimer();
+            if (timeLeft <= 0) {
+                this.timeUp();
+            }
+        }, 1000);
 
         // 隱藏結果顯示
         this.hideGameResult();
@@ -703,9 +732,71 @@ class SnakeGame {
         // 如果之後需要在其他地方使用這個方法，可以保留但不更新 DOM
     }
 
-    updateScore() {
-        // 由於我們已經移除了分數顯示，這個方法可以暫時保持空白
-        // 或者完全移除這個方法的調用
+    updateScore(score, x, y, bonusText) {
+        const scoreDisplay = document.querySelector('.current-score');
+        const oldScore = this.score;
+        this.score += score;
+
+        // 創建包裝器來包含每個數字
+        const wrapper = document.createElement('div');
+        wrapper.style.display = 'inline-block';
+        
+        // 將新分數轉換為字符串並分割為單個數字
+        const newScore = this.score.toString();
+        
+        // 為每個數字創建動畫
+        newScore.split('').forEach((digit, i) => {
+            const span = document.createElement('span');
+            span.textContent = digit;
+            span.style.display = 'inline-block';
+            wrapper.appendChild(span);
+            
+            // 使用 anime.js 創建跳躍動畫
+            anime({
+                targets: span,
+                translateY: [
+                    { value: -20, duration: 150, easing: 'easeOutQuad' },
+                    { value: 0, duration: 350, easing: 'easeInOutQuad' }
+                ],
+                scale: [
+                    { value: 1.5, duration: 150, easing: 'easeOutQuad' },
+                    { value: 1, duration: 350, easing: 'easeInOutQuad' }
+                ],
+                delay: i * 50 // 為每個數字添加延遲，創造波浪效果
+            });
+        });
+
+        // 替換舊的內容
+        scoreDisplay.innerHTML = '';
+        scoreDisplay.appendChild(wrapper);
+
+        // 顯示分數增加提示
+        const popup = document.createElement('div');
+        popup.className = 'score-popup';
+        popup.textContent = `+${score}`;
+        document.querySelector('.score-container').appendChild(popup);
+        
+        // 自動移除彈出提示
+        setTimeout(() => popup.remove(), 1000);
+
+        // 處理連擊效果
+        if (this.combo > 1) {
+            // 顯示 Combo Time 提示
+            let comboIndicator = document.querySelector('.combo-indicator');
+            if (!comboIndicator) {
+                comboIndicator = document.createElement('div');
+                comboIndicator.className = 'combo-indicator';
+                comboIndicator.textContent = 'COMBO TIME!';
+                document.querySelector('.score-container').appendChild(comboIndicator);
+            }
+            comboIndicator.classList.add('active');
+        } else {
+            // 移除連擊效果
+            const comboIndicator = document.querySelector('.combo-indicator');
+            if (comboIndicator) {
+                comboIndicator.classList.remove('active');
+            }
+        }
     }
 
     draw() {
@@ -1030,6 +1121,10 @@ class SnakeGame {
                     });
                     
                     comboSound.play();
+
+                    // 加快背景音樂
+                    const bgmRate = Math.min(1.0 + (this.combo - 1) * 0.1, 1.5); // 最多加快 50%
+                    this.sounds.bgm.rate(bgmRate);
                 }
 
                 // 增加蛇的速度
@@ -1050,7 +1145,12 @@ class SnakeGame {
                     
                     this.completedGreetings.push(this.currentWords.join(''));
                     this.showCompletionAnimation(this.currentWords);
-                    this.sounds.complete.play();
+                    
+                    // 播放兩次完成音效
+                    this.sounds.crash.play();
+                    setTimeout(() => {
+                        this.sounds.crash.play();
+                    }, 200);  // 200毫秒後播放第二次
                     
                     this.currentGreetingIndex++;
                     
@@ -1221,6 +1321,10 @@ class SnakeGame {
         clearInterval(this.gameLoop);
         clearInterval(this.timer);
         this.bgm.stop();
+        
+        // 隱藏遊戲界面元素
+        document.querySelector('.game-container').classList.remove('game-started');
+        
         this.showGameResult();
     }
 
@@ -1288,35 +1392,41 @@ class SnakeGame {
 
     // 添加計時器更新方法
     updateTimer() {
-        if (this.remainingTime > 0) {
-            this.remainingTime--;
-            // 更新新的計時器顯示
-            const timerText = document.querySelector('.timer-text');
-            const timerBar = document.querySelector('.timer-bar');
-            
-            if (timerText && timerBar) {
-                timerText.textContent = this.remainingTime;
-                const percentage = (this.remainingTime / this.gameTime) * 100;
-                // 使用 transform 來縮短 timer bar
-                timerBar.style.transform = `scaleX(${percentage / 100})`;
-                timerBar.style.transformOrigin = 'left';
-            }
-
-            // 當時間少於 10 秒時添加警告效果
-            if (this.remainingTime <= 10) {
-                timerText.classList.add('warning');
-                timerBar.classList.add('warning');
-            }
-
-            if (this.remainingTime <= 0) {
-                this.timeUp();
-            }
+        // 如果時間暫停中，不更新時間
+        if (this.isTimeFrozen) {
+            return this.frozenTimeRemaining;
         }
+
+        const timeLeft = Math.max(0, this.endTime - Date.now());
+        const totalTime = this.gameDuration * 1000;
+        const percentage = timeLeft / totalTime;
+
+        // 更新時間文字
+        const seconds = Math.ceil(timeLeft / 1000);
+        const timerText = document.querySelector('.timer-text');
+        timerText.textContent = seconds;
+
+        // 更新計時條
+        const timerBar = document.querySelector('.timer-bar');
+        timerBar.style.transform = `scaleY(${percentage})`;
+
+        // 當時間少於 30 秒時添加警告效果
+        if (seconds <= 30 && !this.isTimeFrozen) {
+            timerBar.classList.add('warning');
+            timerText.classList.add('warning');
+        } else {
+            timerBar.classList.remove('warning');
+            timerText.classList.remove('warning');
+        }
+
+        return timeLeft;
     }
 
     // 時間到方法
     timeUp() {
-        this.gameOver();
+        if (!this.isGameOver) {
+            this.gameOver();
+        }
     }
 
     // 添加顯示結果的方法
@@ -1326,33 +1436,31 @@ class SnakeGame {
         // 更新 HTML 內容
         const resultContainer = document.getElementById('gameResult');
         const scoreDisplay = resultContainer.querySelector('.score-value');
-        const statsList = document.createElement('div');
-        statsList.className = 'stats-list';
         
         // 顯示基礎分數
         scoreDisplay.textContent = this.score;
 
-        // 創建並顯示統計數據
-        const statsHTML = `
-            <div class="stats-container">
-                <h3>遊戲統計</h3>
-                <div class="stat-item">完成祝賀詞：${this.completedGreetings.length}</div>
-                <div class="stat-item">完美收集：${this.stats.perfectCollects}次</div>
-                <div class="stat-item">最高連擊：${this.maxCombo}次</div>
-                ${bonuses.map(bonus => `
-                    <div class="bonus-item">
-                        <span>${bonus.text}</span>
-                        <span>+${bonus.points}</span>
-                    </div>
-                `).join('')}
-                <div class="final-score">
-                    最終得分：${finalScore}
-                </div>
+        // 更新完成的祝賀詞列表
+        const completedWordsList = document.getElementById('completedWordsList');
+        completedWordsList.innerHTML = this.completedGreetings.map(greeting => `
+            <tr>
+                <td>${greeting}</td>
+            </tr>
+        `).join('');
+
+        // 更新統計數據
+        document.getElementById('totalCollected').textContent = this.stats.totalCollected;
+        document.getElementById('perfectCollects').textContent = this.stats.perfectCollects;
+        document.getElementById('maxCombo').textContent = this.maxCombo;
+
+        // 更新獎勵列表
+        const bonusesList = document.getElementById('bonusesList');
+        bonusesList.innerHTML = bonuses.map(bonus => `
+            <div class="bonus-item">
+                <span>${bonus.text}</span>
+                <span>+${bonus.points}</span>
             </div>
-        `;
-        
-        statsList.innerHTML = statsHTML;
-        resultContainer.querySelector('.score-result-container').appendChild(statsList);
+        `).join('');
         
         // 顯示結果界面
         resultContainer.classList.remove('hidden');
@@ -1499,7 +1607,8 @@ class SnakeGame {
             turn: new Howl({
                 src: ['snd/turn.mp3'],
                 volume: 0.5
-            })
+            }),
+            crash: new Howl({ src: ['snd/crash.mp3'] })  // 添加新的音效
         };
 
         // 為了保持兼容性，保留 bgm 引用
@@ -1551,25 +1660,38 @@ class SnakeGame {
 
     // 新增：處理錯誤收集
     handleWrongCollection() {
-        if (this.isInvincible) return;
+        if (!this.isInvincible) {
+            // 中斷連擊
+            this.breakCombo();
+            
+            // 顯示錯誤表情
+            this.showEmoji('wrong', this.snake[0].x, this.snake[0].y);
+            
+            // 添加懲罰效果
+            this.isPenalized = true;
+            setTimeout(() => {
+                this.isPenalized = false;
+            }, this.penaltyDuration);
+        }
+    }
 
-        // 設置懲罰和無敵狀態
-        this.isPenalized = true;
-        this.isInvincible = true;
+    // 修改 breakCombo 方法
+    breakCombo() {
+        this.combo = 0;
         
-        // 觸發閃光效果
-        this.flashOverlay.classList.add('active');
-        
-        // 1秒後恢復移動
-        setTimeout(() => {
-            this.isPenalized = false;
-            this.flashOverlay.classList.remove('active');
-        }, this.penaltyDuration);
+        // 移除連擊提示
+        const comboIndicator = document.querySelector('.combo-indicator');
+        if (comboIndicator) {
+            // 添加淡出動畫
+            comboIndicator.style.animation = 'fadeOut 0.3s ease forwards';
+            // 動畫結束後移除元素
+            setTimeout(() => {
+                comboIndicator.remove();
+            }, 300);
+        }
 
-        // 2秒後恢復可被傷害狀態
-        setTimeout(() => {
-            this.isInvincible = false;
-        }, this.invincibleDuration);
+        // 恢復背景音樂到正常速度和音調
+        this.sounds.bgm.rate(1.0);
     }
 
     // 新增：增加蛇的長度的方法
@@ -1767,38 +1889,19 @@ class SnakeGame {
 
     // 繪製道具
     drawPowerUps() {
-        if (!this.powerUps) return;  // 添加安全檢查
-        
         this.powerUps.forEach(powerUp => {
-            if (!powerUp || powerUp.collected) return;
-
-            const type = this.powerUpTypes[powerUp.type];
-            if (!type) return;  // 添加類型檢查
-            
-            this.ctx.save();
-            // 繪製道具背景
-            this.ctx.beginPath();
-            this.ctx.arc(
-                powerUp.x + powerUp.size/2,
-                powerUp.y + powerUp.size/2,
-                powerUp.size/2,
-                0,
-                Math.PI * 2
-            );
-            this.ctx.fillStyle = type.color;
-            this.ctx.fill();
-            
-            // 繪製道具名稱
-            this.ctx.fillStyle = '#000';
-            this.ctx.font = `${this.isMobile ? '14px' : '16px'} "Noto Sans TC"`;
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(
-                type.name,
-                powerUp.x + powerUp.size/2,
-                powerUp.y + powerUp.size/2
-            );
-            this.ctx.restore();
+            if (!powerUp.collected) {
+                const img = this.powerUpImages[powerUp.type];
+                if (img.complete) {  // 確保圖片已加載
+                    this.ctx.drawImage(
+                        img,
+                        powerUp.x,
+                        powerUp.y,
+                        this.pixelSize,
+                        this.pixelSize
+                    );
+                }
+            }
         });
     }
 
@@ -1913,59 +2016,6 @@ class SnakeGame {
         }
 
         return { finalScore, bonuses };
-    }
-
-    // 更新分數顯示
-    updateScore(score, x, y, bonusText = '') {
-        this.score += score;
-        
-        // 更新分數顯示
-        this.scoreDisplay.textContent = this.score;
-        this.scoreDisplay.classList.add('score-bump');
-        
-        // 移除動畫類
-        setTimeout(() => {
-            this.scoreDisplay.classList.remove('score-bump');
-        }, 300);
-
-        // 創建飄浮分數效果
-        const floatingScore = document.createElement('div');
-        floatingScore.className = 'floating-score';
-        
-        // 如果有獎勵文字，創建兩行顯示
-        if (bonusText) {
-            floatingScore.innerHTML = `
-                <div class="score-text">+${score}</div>
-                <div class="bonus-text">${bonusText}</div>
-            `;
-        } else {
-            floatingScore.innerHTML = `<div class="score-text">+${score}</div>`;
-        }
-
-        floatingScore.style.cssText = `
-            position: absolute;
-            left: ${x}px;
-            top: ${y - 30}px;
-            z-index: 1000;
-            pointer-events: none;
-        `;
-        
-        document.body.appendChild(floatingScore);
-
-        // 使用 GSAP 製作動畫
-        gsap.fromTo(floatingScore, 
-            {
-                opacity: 1,
-                scale: 1
-            },
-            {
-                y: '-=50',
-                opacity: 0,
-                duration: 1,
-                ease: 'power1.out',
-                onComplete: () => floatingScore.remove()
-            }
-        );
     }
 
     // 添加特效系統
@@ -2192,6 +2242,28 @@ class SnakeGame {
         if (this.debugPanel) {
             this.debugPanel.remove();
             this.debugPanel = null;
+        }
+    }
+
+    // 修改切換頁面方法
+    toggleResultPage() {
+        const scorePage = document.querySelector('.score-result-container');
+        const statsContainer = document.querySelector('.stats-container');
+        const leaderboardPage = document.querySelector('.leaderboard-container');
+        const nextPageButton = document.querySelector('.next-page-button');
+        
+        if (scorePage.style.display !== 'none') {
+            // 切換到排行榜
+            scorePage.style.display = 'none';
+            statsContainer.style.display = 'none';
+            leaderboardPage.style.display = 'block';
+            nextPageButton.textContent = '返回';
+        } else {
+            // 切換回成績頁
+            scorePage.style.display = 'block';
+            statsContainer.style.display = 'block';
+            leaderboardPage.style.display = 'none';
+            nextPageButton.textContent = '排行榜';
         }
     }
 }

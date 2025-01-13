@@ -22,6 +22,12 @@
             <button id="startButton">開始遊戲</button>
         </div>
         <div class="game-header">
+            
+            <div class="score-container">
+                <div class="score-label">分數</div>
+                <div class="current-score">0</div>
+            </div>
+
             <div class="timer-container">
                 <div class="timer-text">120</div>
                 <div class="timer-bar"></div>
@@ -34,10 +40,7 @@
                 <div id="word3" class="collected-word"><span></span></div>
             </div>
 
-            <div class="score-container">
-                <div class="score-label">分數</div>
-                <div class="current-score">0</div>
-            </div>
+
         </div>
         
         <canvas id="gameCanvas"></canvas>
@@ -46,23 +49,33 @@
             <h2>遊戲結束</h2>
             <div class="score-result-container">
                 <div class="score-display">
-                    <div class="score-label">完成了祝賀詞</div>
                     <div class="score-value"><span id="finalScore">0</span></div>
-                </div>
-                <div class="result-table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>你完成的祝賀詞</th>
-                            </tr>
-                        </thead>
-                        <tbody id="completedWordsList">
-                            <!-- 動態填充 -->
-                        </tbody>
-                    </table>
+                    <div class="result-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>你完成的祝賀詞</th>
+                                </tr>
+                            </thead>
+                            <tbody id="completedWordsList">
+                                <!-- 動態填充 -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-            <button class="restart-button">重新開始</button>
+            <div class="stats-container">
+                <div class="stat-item">總收集數：<span id="totalCollected">0</span></div>
+                <div class="stat-item">完美收集：<span id="perfectCollects">0</span></div>
+                <div class="stat-item">最高連擊：<span id="maxCombo">0</span></div>
+                <div id="bonusesList">
+                    <!-- 動態填充獎勵項目 -->
+                </div>
+            </div>
+            <div class="result-buttons">
+                <button class="restart-button">重新開始</button>
+                <button class="next-page-button">排行榜</button>
+            </div>
         </div>
 
         <div id="completionPopup" class="completion-popup hidden">
