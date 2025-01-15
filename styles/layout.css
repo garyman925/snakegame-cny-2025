@@ -1,0 +1,45 @@
+/* 布局相關樣式 */
+.game-header {
+    position: fixed;
+    left: 0;
+    width: 100%;
+    height: 80px;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    z-index: 2;
+}
+
+/* 遊戲開始前的狀態 */
+.game-header {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+/* 遊戲開始後的狀態 */
+.game-started .game-header {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* 確保 header 內的元素可以接收點擊事件 */
+.game-header > * {
+    pointer-events: auto;
+}
+
+/* 遊戲開始後顯示所有遊戲相關元素 */
+.game-started .collected-words,
+.game-started .timer-container,
+.game-started .score-container {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* 遊戲開始時隱藏介紹頁面 */
+.game-started .game-intro {
+    opacity: 0;
+    visibility: hidden;
+} 

@@ -7,8 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Noto+Sans+TC:wght@100..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles/main.css">
 <body>
+    <div id="particles-js"></div>
     <div class="game-container">
         <div class="game-intro">
             <div class="game-logo">
@@ -46,35 +47,59 @@
         <canvas id="gameCanvas"></canvas>
         
         <div id="gameResult" class="game-result hidden">
-            <h2>遊戲結束</h2>
-            <div class="score-result-container">
-                <div class="score-display">
-                    <div class="score-value"><span id="finalScore">0</span></div>
-                    <div class="result-table">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>你完成的祝賀詞</th>
-                                </tr>
-                            </thead>
-                            <tbody id="completedWordsList">
-                                <!-- 動態填充 -->
-                            </tbody>
-                        </table>
+            <h2 class="game-over-reason"></h2>
+            <div class="result-container">
+                <div class="">
+                    <div class="score-result-container">
+                            <div class="score-display">
+                            <div class="score-value"><span id="finalScore">0</span></div>
+                            <div class="result-table">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="completedWordsList">
+                                        <!-- 動態填充 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stats-container">
+                        <div class="stat-item">總收集數：<span id="totalCollected">0</span></div>
+                        <div class="stat-item">完美收集：<span id="perfectCollects">0</span></div>
+                        <div class="stat-item">最高連擊：<span id="maxCombo">0</span></div>
+                        <div id="bonusesList">
+                            <!-- 動態填充獎勵項目 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ranking-container">
+                    <div class="ranking-title">排行榜</div>
+                    <div class="ranking-tabs">
+                        <button class="tab-btn active" data-tab="score">最高分數</button>
+                        <button class="tab-btn" data-tab="combo">最高連擊</button>
+                        <button class="tab-btn" data-tab="time">最快通關</button>
+                    </div>
+                    <div class="ranking-content">
+                        <div class="ranking-tab active" id="scoreRanking">
+                            <!-- 動態填充最高分數排行 -->
+                        </div>
+                        <div class="ranking-tab" id="comboRanking">
+                            <!-- 動態填充最高連擊排行 -->
+                        </div>
+                        <div class="ranking-tab" id="timeRanking">
+                            <!-- 動態填充最快通關排行 -->
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="stats-container">
-                <div class="stat-item">總收集數：<span id="totalCollected">0</span></div>
-                <div class="stat-item">完美收集：<span id="perfectCollects">0</span></div>
-                <div class="stat-item">最高連擊：<span id="maxCombo">0</span></div>
-                <div id="bonusesList">
-                    <!-- 動態填充獎勵項目 -->
-                </div>
-            </div>
+            
             <div class="result-buttons">
                 <button class="restart-button">重新開始</button>
-                <button class="next-page-button">排行榜</button>
             </div>
         </div>
 
@@ -93,7 +118,8 @@
             </div>
         </div>
     </div>
-    <script src="game.js"></script>
+    <script type="module" src="game.js"></script>
+    <script type="module" src="src/game/Game.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>

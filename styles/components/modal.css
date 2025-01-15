@@ -1,0 +1,311 @@
+/* 遊戲結果和彈窗相關樣式 */
+.game-result {
+    width: 1000px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 30px;
+    border-radius: 20px;
+    text-align: center;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* 增加 .hidden 的特異性和重要性 */
+.game-result.hidden {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+/* 確保其他 .hidden 元素也能正確隱藏 */
+.hidden {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+.result-container {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    justify-content: start;
+    align-items: start;
+}
+
+.result-container > div {
+    flex: 1;
+}
+
+.stats-container {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 15px;
+    width: 100%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.stats-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-item {
+    font-size: 1.2em;
+    font-family: "Kanit", serif;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    justify-content: space-between;
+    padding: 5px 15px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.stat-item span {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #ff0000;
+}
+
+.bonus-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.2em;
+    color: #ff0000;
+    margin: 10px 0;
+    padding: 5px 10px;
+    background: rgba(255, 255, 0, 0.2);
+    border-radius: 5px;
+}
+
+.result-buttons {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.restart-button {
+    padding: 12px 30px;
+    font-size: 1.2em;
+    color: white;
+    border: 4px solid #ffdd00;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.restart-button {
+    background-color: #ff0000;
+}
+
+.restart-button:hover {
+    transform: scale(1.1);
+}
+
+.completion-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    background: rgba(255, 255, 255, 0.95);
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    z-index: 1000;
+    transition: transform 0.3s ease;
+}
+
+.completion-popup.show {
+    transform: translate(-50%, -50%) scale(1);
+    animation: popBounce 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* 排行榜樣式 */
+.ranking-container {
+    background: rgba(255, 255, 255, 0.95);
+    border: 4px solid orange;
+    border-radius: 15px;
+    padding: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.ranking-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: center;
+    color: #333;
+}
+
+.ranking-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.tab-btn {
+    padding: 8px 16px;
+    border: none;
+    background: #f0f0f0;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tab-btn.active {
+    background: #45c8f1;
+    color: white;
+}
+
+.ranking-content {
+    position: relative;
+    min-height: 200px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.ranking-tab {
+    display: none;
+    animation: fadeIn 0.3s ease;
+    padding: 5px;
+}
+
+.ranking-tab.active {
+    display: block;
+}
+
+.ranking-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    margin: 5px;
+    border-radius: 10px;
+    background: #f8f8f8;
+    transition: all 0.2s ease;
+}
+
+.ranking-item:hover {
+    transform: translateX(5px);
+}
+
+.rank-number {
+    min-width: 30px;
+    height: 30px;
+    font-size: 0.9em;
+}
+
+.rank-info {
+    flex-grow: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+}
+
+.rank-name {
+    font-weight: bold;
+    color: #333;
+    flex: 1;
+    text-align: left;
+}
+
+.rank-score {
+    font-weight: bold;
+    color: #ff6b6b;
+    margin: 0 15px;
+}
+
+.rank-date {
+    color: #888;
+    font-size: 0.9em;
+}
+
+/* 調整排名數字的樣式 */
+.rank-number {
+    min-width: 30px;
+    height: 30px;
+    font-size: 0.9em;
+}
+
+/* 前三名的特殊樣式 */
+.ranking-item:nth-child(1) {
+    background: linear-gradient(to right, #ffd70033, #f8f8f8);
+}
+
+.ranking-item:nth-child(2) {
+    background: linear-gradient(to right, #c0c0c033, #f8f8f8);
+}
+
+.ranking-item:nth-child(3) {
+    background: linear-gradient(to right, #cd7f3233, #f8f8f8);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.game-over-reason {
+    color: #ff6b6b;
+    font-size: 2em;
+    font-weight: bold;
+    width: 100%;
+    text-align: center;
+}
+
+/* 添加 Logo 動畫效果 */
+.game-logo img {
+    filter: drop-shadow(0 0 10px rgba(255, 165, 0, 0.5));
+    transition: filter 0.3s ease;
+}
+
+.game-logo:hover img {
+    filter: drop-shadow(0 0 20px rgba(255, 165, 0, 0.8));
+}
+
+/* 添加進入動畫 */
+.game-logo.enter {
+    animation: logoEnter 1s ease-out forwards;
+}
+
+@keyframes logoEnter {
+    0% {
+        transform: translateY(-100vh) rotate(-180deg);
+        opacity: 0;
+    }
+    60% {
+        transform: translateY(20px) rotate(10deg);
+        opacity: 1;
+    }
+    80% {
+        transform: translateY(-10px) rotate(-5deg);
+    }
+    100% {
+        transform: translateY(0) rotate(0);
+    }
+}
+
+/* 暫時隱藏難度選擇 */
+.difficulty-select {
+    display: none;  /* 暫時隱藏 */
+}
+
+.difficulty-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    background: #f0f0f0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.difficulty-btn.selected {
+    background: #45c8f1;
+    color: white;
+} 

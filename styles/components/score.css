@@ -1,0 +1,92 @@
+/* 分數相關樣式 */
+.score-container {
+    display: flex;
+    flex-direction: column;
+    line-height: 30px;
+    text-align: center;
+    position: relative;
+    top: 0;
+    margin: auto;
+}
+
+.score-label {
+    font-size: 1.2em;
+    color: #ff6600;
+    margin-bottom: 1em;
+}
+
+.current-score {
+    font-size: 6em;
+    font-weight: bold;
+    font-family: "Kanit", serif;
+    color: #ff6600;
+    position: relative;
+    display: inline-block;
+}
+
+.score-value {
+    font-size: 5rem;
+    font-weight: 900;
+    font-family: "Kanit", sans-serif;
+    background: white;
+    color: #f00;
+    border: 4px solid orange;
+    border-radius: 10px;
+    padding: 0 20px;
+}
+
+.combo-indicator {
+    position: absolute;
+    font-family: "Kanit", serif;
+    white-space: nowrap;
+    bottom: -65px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #45c8f1;
+    font-size: 2.5em;
+    font-weight: bold;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.combo-indicator.active {
+    opacity: 1;
+    animation: comboTextPulse 1s infinite;
+}
+
+.combo-display {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    pointer-events: none;
+    z-index: 1000;
+    transform-origin: center;
+}
+
+.combo-text {
+    color: #ff0000;
+    font-size: 24px;
+    font-weight: bold;
+    text-shadow: 
+        2px 2px 0 #000,
+        -2px -2px 0 #000,
+        2px -2px 0 #000,
+        -2px 2px 0 #000;
+}
+
+.combo-number {
+    color: #ffff00;
+    font-size: 32px;
+    font-weight: bold;
+    text-shadow: 
+        2px 2px 0 #000,
+        -2px -2px 0 #000,
+        2px -2px 0 #000,
+        -2px 2px 0 #000;
+}
+
+/* 分數動畫效果 */
+.score-jump {
+    animation: scoreJump 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+} 

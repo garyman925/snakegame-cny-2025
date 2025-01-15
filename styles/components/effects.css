@@ -1,0 +1,283 @@
+/* 遊戲特效相關樣式 */
+.speedup-timer {
+    position: fixed;
+    white-space: nowrap;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 5rem;
+    font-weight: bold;
+    color: #ff0000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.speedup-timer.show {
+    opacity: 1;
+    animation: pulseScale 0.5s infinite alternate;
+}
+
+.status-timer {
+    position: fixed;
+    white-space: nowrap;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 4rem;
+    font-weight: bold;
+    color: #45c8f1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.status-timer.show {
+    opacity: 1;
+    animation: floatUpDown 1s infinite alternate ease-in-out;
+}
+
+.flash-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 0, 0, 0.3);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 999;
+    transition: opacity 0.3s ease;
+}
+
+.flash-overlay.active {
+    opacity: 1;
+}
+
+@keyframes pulseScale {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.2);
+    }
+}
+
+@keyframes floatUpDown {
+    0% {
+        transform: translate(-50%, -50%);
+    }
+    100% {
+        transform: translate(-50%, -60%);
+    }
+}
+
+/* 調試用的永久顯示狀態 */
+.speedup-timer.debug-show {
+    opacity: 1 !important;
+    animation: none !important;  /* 停止動畫 */
+    color: #ff0000;
+    background: rgba(255, 255, 255, 0.8);  /* 添加背景使文字更容易看見 */
+    padding: 10px;
+    border-radius: 5px;
+}
+
+/* 蛇的無敵狀態 */
+.invincible-snake {
+    opacity: 0.5;
+    animation: blinkSnake 0.5s infinite alternate;
+}
+
+@keyframes blinkSnake {
+    from {
+        opacity: 0.3;
+    }
+    to {
+        opacity: 0.7;
+    }
+}
+
+#particles-js {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.combo-indicator {
+    white-space: nowrap;
+    position: absolute;
+    top: 130%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #ff6b6b;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.combo-indicator.active {
+    opacity: 1;
+}
+
+.combo-indicator .combo-text {
+    color: #ff6b6b;
+    font-size: 3.5rem;
+    font-family: "Kanit", serif;
+    text-shadow: none;
+}
+
+.combo-indicator .combo-count {
+    color: #ff4757;
+    font-size: 2rem;
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+.powerup-notification {
+    position: fixed;
+    top: -50px; /* 初始位置在畫面外 */
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    z-index: 1000;
+    transition: top 0.3s ease-in-out;
+    text-align: center;
+    pointer-events: none;
+}
+
+.powerup-notification.active {
+    top: 20px; /* 滑入到畫面上方 */
+}
+
+@keyframes slideDown {
+    from {
+        top: -50px;
+        opacity: 0;
+    }
+    to {
+        top: 20px;
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        top: 20px;
+        opacity: 1;
+    }
+    to {
+        top: -50px;
+        opacity: 0;
+    }
+}
+
+.powerup-notification.active {
+    animation: slideDown 0.3s ease-out forwards;
+}
+
+.powerup-notification:not(.active) {
+    animation: slideUp 0.3s ease-in forwards;
+}
+
+/* 無敵狀態的閃爍效果 */
+.invincible-state .snake-segment {
+    animation: invincibleBlink 0.5s infinite alternate;
+}
+
+@keyframes invincibleBlink {
+    from {
+        opacity: 0.3;
+    }
+    to {
+        opacity: 0.7;
+    }
+}
+
+/* 懲罰狀態的視覺提示 */
+.game-container.invincible-state {
+    position: relative;
+}
+
+.game-container.invincible-state::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 0, 0, 0.1);
+    animation: invinciblePulse 1s infinite alternate;
+    pointer-events: none;
+}
+
+@keyframes invinciblePulse {
+    from {
+        background: rgba(255, 0, 0, 0.1);
+    }
+    to {
+        background: rgba(255, 0, 0, 0.2);
+    }
+}
+
+/* 透明狀態的閃爍效果 */
+.transparent-state .snake-segment {
+    animation: transparentBlink 0.5s infinite alternate;
+}
+
+@keyframes transparentBlink {
+    from {
+        opacity: 0.3;
+    }
+    to {
+        opacity: 0.7;
+    }
+}
+
+/* 透明狀態的視覺提示 */
+.game-container.transparent-state {
+    position: relative;
+}
+
+.game-container.transparent-state::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(128, 128, 128, 0.1);
+    animation: transparentPulse 1s infinite alternate;
+    pointer-events: none;
+}
+
+@keyframes transparentPulse {
+    from {
+        background: rgba(128, 128, 128, 0.1);
+    }
+    to {
+        background: rgba(128, 128, 128, 0.2);
+    }
+} 

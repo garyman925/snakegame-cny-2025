@@ -1,0 +1,12 @@
+@import 'base.css';
+@import 'layout.css';
+@import 'components/game.css';
+@import 'components/score.css';
+@import 'components/timer.css';
+@import 'components/controls.css';
+@import 'components/modal.css';
+@import 'components/words.css';
+@import 'components/emoji.css';
+@import 'components/effects.css';
+@import 'animations.css';
+@import 'responsive.css'; 

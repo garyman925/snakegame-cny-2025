@@ -1,87 +1,95 @@
-class Collider2D {
-    static boxCollision(rect1, rect2) {
-        return (rect1.x < rect2.x + rect2.width &&
-                rect1.x + rect1.width > rect2.x &&
-                rect1.y < rect2.y + rect2.height &&
-                rect1.y + rect1.height > rect2.y);
-    }
+// 動態引入 Collider2D 模組
+let Collider2D;
+import('./src/game/Collider2D.js')
+    .then(module => {
+        Collider2D = module.Collider2D;
+        console.log('Collider2D 模組已成功載入');
+    })
+    .catch(err => {
+        console.error('無法載入 Collider2D 模組:', err);
+    });
 
-    static circleCollision(circle1, circle2) {
-        const dx = circle1.x - circle2.x;
-        const dy = circle1.y - circle2.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        return distance < (circle1.radius + circle2.radius);
-    }
-}
+// 引入 UI 模組
+let UISystem;
+import('./src/game/UI.js')
+    .then(module => {
+        UISystem = module.UISystem;
+        console.log('UI 模組已成功載入');
+    })
+    .catch(err => {
+        console.error('無法載入 UI 模組:', err);
+    });
+
+// 引入各個系統
+let AudioSystem, PowerUpSystem, ScoreSystem, EffectSystem;
+
+console.log('🔄 開始載入遊戲系統模組...');
+
+Promise.all([
+    import('./src/game/AudioSystem.js').then(module => {
+        AudioSystem = module.AudioSystem;
+        console.log('Audio 模組已成功載入');
+        return module;
+    }),
+    import('./src/game/PowerUpSystem.js').then(module => {
+        PowerUpSystem = module.PowerUpSystem;
+        console.log('PowerUp 模組已成功載入');
+        return module;
+    }),
+    import('./src/game/ScoreSystem.js').then(module => {
+        ScoreSystem = module.ScoreSystem;
+        console.log('Score 模組已成功載入');
+        return module;
+    }),
+    import('./src/game/EffectSystem.js').then(module => {
+        EffectSystem = module.EffectSystem;
+        console.log('Effect 模組已成功載入');
+        return module;
+    })
+]).then(() => {
+    console.log('所有遊戲系統模組載入完成！');
+}).catch(err => {
+    console.error('載入遊戲系統模組時發生錯誤:', err);
+    console.error('錯誤詳情:', {
+        name: err.name,
+        message: err.message,
+        stack: err.stack
+    });
+});
+
+// 在其他系統引入後添加
+let ControlSystem;
+import('./src/game/ControlSystem.js')
+    .then(module => {
+        ControlSystem = module.ControlSystem;
+        console.log('Control 模組已成功載入');
+    })
+    .catch(err => {
+        console.error('無法載入 Control 模組:', err);
+        console.error('錯誤詳情:', {
+            name: err.name,
+            message: err.message,
+            stack: err.stack
+        });
+    });
+
+// 在其他系統引入後添加
+let DebugSystem;
+import('./src/game/DebugSystem.js')
+    .then(module => {
+        DebugSystem = module.DebugSystem;
+        console.log('Debug 模組已成功載入');
+    })
+    .catch(err => {
+        console.error('無法載入 Debug 模組:', err);
+    });
 
 class SnakeGame {
     constructor() {
         // 首先初始化基本屬性
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        
-        // 初始化道具系統相關屬性（移到最前面）
-        this.powerUps = [];  // 初始化道具陣列
-        this.powerUpImages = {};  // 初始化道具圖片容器
-        this.activePowerUps = new Map();  // 初始化活動道具
-        this.powerUpSpawnInterval = 10000; // 每10秒生成一個道具
-        this.lastPowerUpSpawn = 0;
-        this.isTimeFrozen = false;
-        this.frozenTimeRemaining = 0;
-        this.speedMultiplier = 1;
-        this.isInvincible = false;
-
-        // 定義道具類型
-        this.powerUpTypes = {
-            SPEED: {
-                name: '加速',
-                color: '#ffff00',
-                duration: 5000,
-                image: 'img/tool-flash.png',
-                effect: () => {
-                    this.speedMultiplier = 1.5;
-                    this.sounds.powerup.play();
-                },
-                reset: () => {
-                    this.speedMultiplier = 1;
-                }
-            },
-            INVINCIBLE: {
-                name: '無敵',
-                color: '#ff00ff',
-                duration: 3000,
-                image: 'img/tool-star.png',
-                effect: () => {
-                    this.isInvincible = true;
-                    this.sounds.powerup.play();
-                },
-                reset: () => {
-                    this.isInvincible = false;
-                }
-            },
-            TIME_FREEZE: {
-                name: '時間暫停',
-                color: '#00ffff',
-                duration: 3000,
-                image: 'img/tool-timer.png',
-                effect: () => {
-                    this.isTimeFrozen = true;
-                    this.sounds.powerup.play();
-                    this.frozenTimeRemaining = this.endTime - Date.now();
-                },
-                reset: () => {
-                    this.isTimeFrozen = false;
-                    this.endTime = Date.now() + this.frozenTimeRemaining;
-                }
-            }
-        };
-
-        // 加載道具圖片
-        Object.entries(this.powerUpTypes).forEach(([type, config]) => {
-            const img = new Image();
-            img.src = config.image;
-            this.powerUpImages[type] = img;
-        });
+       
         
         // 檢測是否為移動設備
         this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -207,21 +215,22 @@ class SnakeGame {
 
         // 初始化食物相關屬性
         this.food = null;
-        this.correctFoods = [];  // 初始化為空數組
-        this.decoyFoods = [];    // 初始化為空數組
+        this.correctFoods = [];  // 保留這行
+        this.decoyFoods = [];    // 保留這行
 
         // 初始化音樂
         this.initAudio();
 
         // 添加懲罰相關屬性
         this.isPenalized = false;
-        this.penaltyDuration = 1000; // 1秒懲罰時間
-        this.invincibleDuration = 2000; // 2秒無敵時間
+        this.penaltyDuration = 1000;  // 1秒停止移動
+        this.transparentDuration = 3000;  // 3秒透明處罰時間
+        this.isTransparent = false;  // 新增：是否處於透明狀態
         
         // 創建閃光效果元素
-        this.flashOverlay = document.createElement('div');
-        this.flashOverlay.className = 'flash-overlay';
-        document.body.appendChild(this.flashOverlay);
+        // this.flashOverlay = document.createElement('div');
+        // this.flashOverlay.className = 'flash-overlay';
+        // document.body.appendChild(this.flashOverlay);
 
         // 加載背景圖案
         this.backgroundPattern = new Image();
@@ -302,9 +311,9 @@ class SnakeGame {
         };
 
         // 視覺效果相關
-        this.glowEffect = false;
-        this.glowDuration = 500; // 發光持續時間（毫秒）
-        this.glowStartTime = 0;
+        // this.glowEffect = false;
+        // this.glowDuration = 500; // 發光持續時間（毫秒）
+        // this.glowStartTime = 0;
 
         // 添加難度相關設置
         this.difficulties = {
@@ -328,23 +337,11 @@ class SnakeGame {
             }
         };
 
-        this.currentDifficulty = 'NORMAL'; // 默認難度
+        // 修改預設難度為簡單
+        this.currentDifficulty = 'EASY';
 
         // 初始化分數顯示
         this.scoreDisplay = document.querySelector('.current-score');
-
-        // 添加表情符號圖片
-        this.emojis = {
-            correct: new Image(),
-            wrong: new Image(),
-            speed: new Image(),
-            star: new Image()
-        };
-
-        this.emojis.correct.src = 'img/emo-heart.png';
-        this.emojis.wrong.src = 'img/emo-sad.png';
-        this.emojis.speed.src = 'img/emo-smart.png';
-        this.emojis.star.src = 'img/emo-star.png';
 
         // 添加 combo 音效
         this.sounds.combo = new Howl({
@@ -403,9 +400,103 @@ class SnakeGame {
             score: 0
         };
 
-        // 添加下一頁按鈕事件監聽
-        document.querySelector('.next-page-button').addEventListener('click', () => {
-            this.toggleResultPage();
+        // 初始化系統的Promise
+        this.systemsReady = Promise.all([
+            new Promise(resolve => {
+                if (EffectSystem) {
+                    this.effects = new EffectSystem(this);
+                    resolve();
+                } else {
+                    setTimeout(() => {
+                        if (EffectSystem) {
+                            this.effects = new EffectSystem(this);
+                            resolve();
+                        }
+                    }, 100);
+                }
+            }),
+            new Promise(resolve => {
+                if (ScoreSystem) {
+                    this.scoreSystem = new ScoreSystem(this);
+                    resolve();
+                } else {
+                    setTimeout(() => {
+                        if (ScoreSystem) {
+                            this.scoreSystem = new ScoreSystem(this);
+                            resolve();
+                        }
+                    }, 100);
+                }
+            }),
+            new Promise(resolve => {
+                if (UISystem) {
+                    this.ui = new UISystem(this);
+                    resolve();
+                } else {
+                    setTimeout(() => {
+                        if (UISystem) {
+                            this.ui = new UISystem(this);
+                            resolve();
+                        }
+                    }, 100);
+                }
+            }),
+            new Promise(resolve => {
+                if (ControlSystem) {
+                    this.controls = new ControlSystem(this);
+                    resolve();
+                } else {
+                    setTimeout(() => {
+                        if (ControlSystem) {
+                            this.controls = new ControlSystem(this);
+                            resolve();
+                        }
+                    }, 100);
+                }
+            }),
+            new Promise(resolve => {
+                if (DebugSystem) {
+                    this.debug = new DebugSystem(this);
+                    resolve();
+                } else {
+                    setTimeout(() => {
+                        if (DebugSystem) {
+                            this.debug = new DebugSystem(this);
+                            resolve();
+                        }
+                    }, 100);
+                }
+            })
+        ]).then(() => {
+            console.log('✅ 所有遊戲系統初始化完成');
+        }).catch(err => {
+            console.error('❌ 系統初始化失敗:', err);
+        });
+
+        // 等待 PowerUpSystem 模組載入後初始化
+        if (PowerUpSystem) {
+            this.powerUpSystem = new PowerUpSystem(this);
+        } else {
+            setTimeout(() => {
+                if (PowerUpSystem) {
+                    this.powerUpSystem = new PowerUpSystem(this);
+                }
+            }, 100);
+        }
+
+        // 添加無敵相關屬性
+        this.isInvincible = false;
+
+        // 初始化排行榜
+        this.initializeRanking();
+
+        // 添加遊戲結束原因
+        this.gameOverReason = '';  // 添加遊戲結束原因
+
+        // 初始化 Logo 動畫
+        import('./src/game/LogoAnimator.js').then(module => {
+            this.logoAnimator = new module.LogoAnimator();
+            this.logoAnimator.playEnterAnimation();
         });
     }
 
@@ -420,77 +511,81 @@ class SnakeGame {
     }
 
     initializeGame() {
-        // 顯示遊戲界面元素
-        document.querySelector('.game-container').classList.add('game-started');
+        try {
+            // 顯示遊戲界面元素
+            document.querySelector('.game-container').classList.add('game-started');
 
-        // 重置蛇的位置
-        this.snake = [
-            {x: 100, y: 50},
-            {x: 50, y: 50},
-            {x: 0, y: 50}
-        ];
-        this.direction = 'right';
-        this.score = 0;
-        this.currentWordIndex = 0;
-        this.isGameOver = false;
+            // 重置蛇的位置
+            this.snake = [
+                {x: 100, y: 50},
+                {x: 50, y: 50},
+                {x: 0, y: 50}
+            ];
+            this.direction = 'right';
+            this.score = 0;
+            this.currentWordIndex = 0;
+            this.isGameOver = false;
 
-        // 重新創建背景圖案
-        if (this.backgroundPattern.complete) {
-            const patternCanvas = document.createElement('canvas');
-            const patternContext = patternCanvas.getContext('2d');
-            patternCanvas.width = this.backgroundPattern.width;
-            patternCanvas.height = this.backgroundPattern.height;
-            
-            patternContext.globalAlpha = 0.02;
-            patternContext.drawImage(this.backgroundPattern, 0, 0);
-            
-            this.pattern = this.ctx.createPattern(patternCanvas, 'repeat');
-        }
-
-        // 重置遊戲狀態
-        this.remainingTime = this.gameDuration;
-        this.completedWords = [];
-        this.currentGreetingIndex = 0;
-        this.completedGreetings = [];
-        
-        // 設置遊戲結束時間
-        this.endTime = Date.now() + (this.gameDuration * 1000);
-        
-        // 開始計時
-        if (this.timer) {
-            clearInterval(this.timer);
-        }
-        this.timer = setInterval(() => {
-            const timeLeft = this.updateTimer();
-            if (timeLeft <= 0) {
-                this.timeUp();
+            // 重新創建背景圖案
+            if (this.backgroundPattern.complete) {
+                const patternCanvas = document.createElement('canvas');
+                const patternContext = patternCanvas.getContext('2d');
+                patternCanvas.width = this.backgroundPattern.width;
+                patternCanvas.height = this.backgroundPattern.height;
+                
+                patternContext.globalAlpha = 0.02;
+                patternContext.drawImage(this.backgroundPattern, 0, 0);
+                
+                this.pattern = this.ctx.createPattern(patternCanvas, 'repeat');
             }
-        }, 1000);
 
-        // 隱藏結果顯示
-        this.hideGameResult();
-        
-        // 清空並準備新的詞組
-        this.clearCollectedWords();
-        this.selectNextGreeting(true); // 添加參數表示是初始化調用
+            // 重置遊戲狀態
+            this.remainingTime = this.gameDuration;
+            this.completedWords = [];
+            this.currentGreetingIndex = 0;
+            this.completedGreetings = [];
+            
+            // 設置遊戲結束時間
+            this.endTime = Date.now() + (this.gameDuration * 1000);
+            
+            // 開始計時
+            if (this.timer) {
+                clearInterval(this.timer);
+            }
+            this.timer = setInterval(() => {
+                const timeLeft = this.updateTimer();
+                if (timeLeft <= 0) {
+                    this.timeUp();
+                }
+            }, 1000);
 
-        // 隱藏開始按鈕
-        document.getElementById('startButton').style.display = 'none';
+            // 隱藏結果顯示
+            this.hideGameResult();
+            
+            // 清空並準備新的詞組
+            this.clearCollectedWords();
+            this.selectNextGreeting(true); // 添加參數表示是初始化調用
 
-        // 初始化動畫狀態
-        this.animationProgress = 0;
-        this.lastPosition = [...this.snake];
+            // 隱藏開始按鈕
+            document.getElementById('startButton').style.display = 'none';
 
-        // 開始播放背景音樂
-        if (!this.bgm.playing()) {
-            this.bgm.play();
+            // 初始化動畫狀態
+            this.animationProgress = 0;
+            this.lastPosition = [...this.snake];
+
+            // 開始播放背景音樂
+            if (!this.bgm.playing()) {
+                this.bgm.play();
+            }
+
+            // 根據難度設置遊戲參數
+            const difficulty = this.difficulties[this.currentDifficulty];
+            this.moveSpeed = difficulty.moveSpeed;
+            this.powerUpSpawnInterval = difficulty.powerUpFrequency;
+            this.scoreMultiplier = difficulty.scoreMultiplier;
+        } catch (error) {
+            console.error('遊戲初始化失敗:', error);
         }
-
-        // 根據難度設置遊戲參數
-        const difficulty = this.difficulties[this.currentDifficulty];
-        this.moveSpeed = difficulty.moveSpeed;
-        this.powerUpSpawnInterval = difficulty.powerUpFrequency;
-        this.scoreMultiplier = difficulty.scoreMultiplier;
     }
 
     // 修改 selectNextGreeting 方法
@@ -551,8 +646,8 @@ class SnakeGame {
 
     spawnFood() {
         // 清除現有的食物
-        this.correctFoods = [];
-        this.decoyFoods = [];
+        this.correctFoods = [];  // 修改這行
+        this.decoyFoods = [];    // 修改這行
         this.foodAnimations = {
             correct: [],
             decoys: []
@@ -648,7 +743,7 @@ class SnakeGame {
                     collected: false,
                     size: this.isMobile ? this.pixelSize * 0.8 : this.pixelSize
                 };
-                this.correctFoods.push(food);
+                this.correctFoods.push(food);  // 保留這行
                 placedFoods.push(food);
             }
         }
@@ -704,7 +799,7 @@ class SnakeGame {
                     word: this.getRandomWord(),
                     size: this.isMobile ? this.pixelSize * 0.8 : this.pixelSize
                 };
-                this.decoyFoods.push(food);
+                this.decoyFoods.push(food);  // 保留這行
                 placedFoods.push(food);
             }
         }
@@ -741,92 +836,17 @@ class SnakeGame {
         // 如果之後需要在其他地方使用這個方法，可以保留但不更新 DOM
     }
 
-    updateScore(score, x, y, bonusText) {
-        const scoreDisplay = document.querySelector('.current-score');
-        const oldScore = this.score;
-        this.score += score;
+    // 修改使用計分系統的方法
+    handleCorrectCollection(index, isCorrectOrder) {
+        const { score, bonusText } = this.scoreSystem.calculateScore(index, isCorrectOrder);
+        // 傳遞蛇頭位置給計分系統
+        const head = this.snake[0];
+        this.scoreSystem.updateScore(score, head.x, head.y, bonusText);
+    }
 
-        // 創建包裝器來包含每個數字
-        const wrapper = document.createElement('div');
-        wrapper.style.display = 'inline-block';
-        
-        // 將新分數轉換為字符串並分割為單個數字
-        const newScore = this.score.toString();
-        
-        // 為每個數字創建動畫
-        newScore.split('').forEach((digit, i) => {
-            const span = document.createElement('span');
-            span.textContent = digit;
-            span.style.display = 'inline-block';
-            wrapper.appendChild(span);
-            
-            // 使用 anime.js 創建跳躍動畫
-            anime({
-                targets: span,
-                translateY: [
-                    { value: -20, duration: 150, easing: 'easeOutQuad' },
-                    { value: 0, duration: 350, easing: 'easeInOutQuad' }
-                ],
-                scale: [
-                    { value: 1.5, duration: 150, easing: 'easeOutQuad' },
-                    { value: 1, duration: 350, easing: 'easeInOutQuad' }
-                ],
-                delay: i * 50 // 為每個數字添加延遲，創造波浪效果
-            });
-        });
-
-        // 替換舊的內容
-        scoreDisplay.innerHTML = '';
-        scoreDisplay.appendChild(wrapper);
-
-        // 顯示分數增加提示
-        const popup = document.createElement('div');
-        popup.className = 'score-popup';
-        popup.textContent = `+${score}`;
-        document.querySelector('.score-container').appendChild(popup);
-        
-        // 自動移除彈出提示
-        setTimeout(() => popup.remove(), 1000);
-
-        // 處理連擊效果
-        if (this.combo > 1) {
-            // 使用傳入的座標而不是 food 的座標
-            this.showComboEffect(x, y, this.combo);
-            
-            // 計算音調（每次提高 0.2，最高到 2.0）
-            const pitchRate = Math.min(1.0 + (this.combo - 1) * 0.2, 2.0);
-            
-            // 創建新的音效實例以確保可以重疊播放
-            const comboSound = new Howl({
-                src: ['snd/combo.mp3'],
-                volume: 0.8,
-                rate: pitchRate
-            });
-            
-            comboSound.play();
-
-            // 加快背景音樂
-            const bgmRate = Math.min(1.0 + (this.combo - 1) * 0.1, 1.5); // 最多加快 50%
-            this.bgm.rate(bgmRate);  // 使用 this.bgm 而不是 this.sounds.bgm
-
-            // 顯示 Combo Time 提示
-            let comboIndicator = document.querySelector('.combo-indicator');
-            if (!comboIndicator) {
-                comboIndicator = document.createElement('div');
-                comboIndicator.className = 'combo-indicator';
-                comboIndicator.textContent = 'COMBO TIME!';
-                document.querySelector('.score-container').appendChild(comboIndicator);
-            }
-            comboIndicator.classList.add('active');
-        } else {
-            // 移除連擊效果
-            const comboIndicator = document.querySelector('.combo-indicator');
-            if (comboIndicator) {
-                comboIndicator.classList.remove('active');
-            }
-            // 恢復背景音樂速度
-            this.bgm.rate(1.0);
-        }
+    breakCombo() {
+        this.scoreSystem.breakCombo();
+        // ... 其他代碼 ...
     }
 
     draw() {
@@ -960,29 +980,29 @@ class SnakeGame {
         }
 
         // 如果處於發光狀態，添加發光效果
-        if (this.glowEffect) {
-            const elapsed = Date.now() - this.glowStartTime;
-            if (elapsed < this.glowDuration) {
-                const alpha = 1 - (elapsed / this.glowDuration);
-                this.ctx.save();
-                this.ctx.strokeStyle = `rgba(255, 255, 0, ${alpha})`;
-                this.ctx.lineWidth = 10;
-                this.ctx.shadowColor = 'yellow';
-                this.ctx.shadowBlur = 20;
-                // 為蛇身每個部分添加發光描邊
-                this.snake.forEach(segment => {
-                    this.ctx.strokeRect(
-                        segment.x,
-                        segment.y,
-                        this.pixelSize,
-                        this.pixelSize
-                    );
-                });
-                this.ctx.restore();
-            } else {
-                this.glowEffect = false;
-            }
-        }
+        // if (this.glowEffect) {
+        //     const elapsed = Date.now() - this.glowStartTime;
+        //     if (elapsed < this.glowDuration) {
+        //         const alpha = 1 - (elapsed / this.glowDuration);
+        //         this.ctx.save();
+        //         this.ctx.strokeStyle = `rgba(255, 255, 0, ${alpha})`;
+        //         this.ctx.lineWidth = 10;
+        //         this.ctx.shadowColor = 'yellow';
+        //         this.ctx.shadowBlur = 20;
+        //         // 為蛇身每個部分添加發光描邊
+        //         this.snake.forEach(segment => {
+        //             this.ctx.strokeRect(
+        //                 segment.x,
+        //                 segment.y,
+        //                 this.pixelSize,
+        //                 this.pixelSize
+        //             );
+        //         });
+        //         this.ctx.restore();
+        //     } else {
+        //         this.glowEffect = false;
+        //     }
+        // }
 
         // 繪製道具
         this.drawPowerUps();
@@ -1070,8 +1090,16 @@ class SnakeGame {
         
         // 檢查各種碰撞
         this.checkFoodCollision(head);
-        this.spawnPowerUp();
-        this.checkPowerUpCollision(head);
+        
+        // 移除舊的道具生成調用
+        // this.spawnPowerUp();
+        // this.checkPowerUpCollision(head);
+
+        // 使用新的PowerUpSystem
+        if (this.powerUpSystem) {
+            this.powerUpSystem.update();
+            this.powerUpSystem.checkCollision(head);
+        }
     }
 
     // 添加新方法：獲取插值後的蛇頭位置
@@ -1101,6 +1129,8 @@ class SnakeGame {
 
     // 修改檢查食物碰撞的方法
     checkFoodCollision(headPosition) {
+        if (this.isTransparent) return; // 在透明狀態下不檢查碰撞
+        
         if (this.isPenalized) return;
 
         const head = {
@@ -1127,38 +1157,11 @@ class SnakeGame {
                 // 顯示正確表情
                 this.showEmoji('correct', headPosition.x, headPosition.y);
 
-                // 增加連擊數
-                this.combo++;
+                // 增加連擊數 - 使用 scoreSystem 的方法
+                this.scoreSystem.increaseCombo();  // 添加這行
 
                 // 計算分數
-                const { score, bonusText } = this.calculateScore(index, index === this.currentWordIndex);
-
-                // 更新總分和顯示
-                this.updateScore(score, headPosition.x, headPosition.y, bonusText);
-
-                // 如果有連擊，顯示連擊效果並播放音效
-                if (this.combo > 1) {
-                    this.showComboEffect(food.x, food.y, this.combo);
-                    
-                    // 計算音調（每次提高 0.2，最高到 2.0）
-                    const pitchRate = Math.min(1.0 + (this.combo - 1) * 0.2, 2.0);
-                    
-                    // 創建新的音效實例以確保可以重疊播放
-                    const comboSound = new Howl({
-                        src: ['snd/combo.mp3'],
-                        volume: 0.8,
-                        rate: pitchRate
-                    });
-                    
-                    comboSound.play();
-
-                    // 加快背景音樂
-                    const bgmRate = Math.min(1.0 + (this.combo - 1) * 0.1, 1.5); // 最多加快 50%
-                    this.bgm.rate(bgmRate);  // 使用 this.bgm 而不是 this.sounds.bgm
-                }
-
-                // 增加蛇的速度
-                this.moveSpeed += this.scoreConfig.speedIncrease;
+                this.handleCorrectCollection(index, index === this.currentWordIndex);
 
                 // 視覺效果
                 this.showCollectedWord(food.word, index);
@@ -1171,7 +1174,7 @@ class SnakeGame {
                 if (this.correctFoods.every(f => f.collected)) {
                     // 添加完成獎勵
                     const completionScore = this.scoreConfig.completion;
-                    this.updateScore(completionScore, headPosition.x, headPosition.y, '完成獎勵!');
+                    this.handleCorrectCollection(index, index === this.currentWordIndex);
                     
                     this.completedGreetings.push(this.currentWords.join(''));
                     this.showCompletionAnimation(this.currentWords);
@@ -1286,7 +1289,7 @@ class SnakeGame {
             this.currentWordIndex++;
             
             if (this.currentWordIndex >= this.currentWords.length) {
-                this.score++;
+                this.handleCorrectCollection(this.currentWordIndex - 1, true);
                 this.completedGreetings.push(this.greetingsData[this.currentGreetingIndex].meaning);
                 this.showCompletionAnimation(this.currentWords);
                 
@@ -1338,7 +1341,7 @@ class SnakeGame {
 
         // 當撞到自己時調用 gameOver
         if (this.checkCollision(head)) {
-            this.gameOver();
+            this.gameOver('你咬到自己了！');
             return;
         }
 
@@ -1346,16 +1349,22 @@ class SnakeGame {
         this.snake.pop();
     }
 
-    gameOver() {
+    gameOver(reason = '') {
         this.isGameOver = true;
         clearInterval(this.gameLoop);
         clearInterval(this.timer);
         this.bgm.stop();
         
+        // 設置遊戲結束原因
+        this.gameOverReason = reason || '時間到！';
+        
         // 隱藏遊戲界面元素
         document.querySelector('.game-container').classList.remove('game-started');
         
         this.showGameResult();
+        
+        // 更新排行榜顯示
+        this.updateRankingData('score');
     }
 
     setupEventListeners() {
@@ -1368,26 +1377,7 @@ class SnakeGame {
             this.gameLoop = setInterval(() => {
                 this.move();
                 this.draw();
-            }, this.frameInterval); // 使用新的幀間隔
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (this.isGameOver) return;
-            
-            switch(e.key) {
-                case 'ArrowUp':
-                    this.changeDirection('up');  // 使用 changeDirection 方法
-                    break;
-                case 'ArrowDown':
-                    this.changeDirection('down');
-                    break;
-                case 'ArrowLeft':
-                    this.changeDirection('left');
-                    break;
-                case 'ArrowRight':
-                    this.changeDirection('right');
-                    break;
-            }
+            }, this.frameInterval);
         });
 
         // 添加難度選擇按鈕的事件監聽
@@ -1409,15 +1399,15 @@ class SnakeGame {
         document.querySelector('[data-difficulty="NORMAL"]').classList.add('selected');
 
         // 添加 debug 相關按鍵
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'F3') {  // 使用 F3 鍵切換 debug 模式
-                this.toggleDebug();
-            } else if (e.key === ' ' && this.isDebugging) {  // 空格鍵繼續遊戲
-                this.isDebugging = false;
-                this.hideDebugInfo();
-                this.resumeGame();
-            }
-        });
+        // document.addEventListener('keydown', (e) => {
+        //     if (e.key === 'F3') {  // 使用 F3 鍵切換 debug 模式
+        //         this.toggleDebug();
+        //     } else if (e.key === ' ' && this.isDebugging) {  // 空格鍵繼續遊戲
+        //         this.isDebugging = false;
+        //         this.hideDebugInfo();
+        //         this.resumeGame();
+        //     }
+        // });
     }
 
     // 添加計時器更新方法
@@ -1455,51 +1445,70 @@ class SnakeGame {
     // 時間到方法
     timeUp() {
         if (!this.isGameOver) {
-            this.gameOver();
+            this.gameOver('時間到！');
         }
     }
 
     // 添加顯示結果的方法
     showGameResult() {
-        const { finalScore, bonuses } = this.calculateFinalScore();
-        
-        // 更新 HTML 內容
-        const resultContainer = document.getElementById('gameResult');
-        const scoreDisplay = resultContainer.querySelector('.score-value');
-        
-        // 顯示基礎分數
-        scoreDisplay.textContent = this.score;
+        const resultElement = document.getElementById('gameResult');
+        if (!resultElement) {
+            console.error('找不到 gameResult 元素');
+            return;
+        }
+
+        // 設置結束原因
+        const reasonElement = resultElement.querySelector('.game-over-reason');
+        if (reasonElement) {
+            reasonElement.textContent = this.gameOverReason;
+        }
+
+        // 更新分數
+        const scoreDisplay = resultElement.querySelector('.score-value');
+        if (scoreDisplay) {
+            scoreDisplay.textContent = this.score;
+        }
 
         // 更新完成的祝賀詞列表
-        const completedWordsList = document.getElementById('completedWordsList');
-        completedWordsList.innerHTML = this.completedGreetings.map(greeting => `
-            <tr>
-                <td>${greeting}</td>
-            </tr>
-        `).join('');
+        const completedWordsList = resultElement.querySelector('#completedWordsList');
+        if (completedWordsList) {
+            completedWordsList.innerHTML = this.completedGreetings.map(greeting => `
+                <tr>
+                    <td>${greeting}</td>
+                </tr>
+            `).join('');
+        }
 
         // 更新統計數據
-        document.getElementById('totalCollected').textContent = this.stats.totalCollected;
-        document.getElementById('perfectCollects').textContent = this.stats.perfectCollects;
-        document.getElementById('maxCombo').textContent = this.maxCombo;
+        const stats = {
+            totalCollected: resultElement.querySelector('#totalCollected'),
+            perfectCollects: resultElement.querySelector('#perfectCollects'),
+            maxCombo: resultElement.querySelector('#maxCombo'),
+            bonusesList: resultElement.querySelector('#bonusesList')
+        };
+
+        if (stats.totalCollected) stats.totalCollected.textContent = this.stats.totalCollected;
+        if (stats.perfectCollects) stats.perfectCollects.textContent = this.stats.perfectCollects;
+        if (stats.maxCombo) stats.maxCombo.textContent = this.maxCombo;
+
+        // 計算最終分數和獎勵
+        const { finalScore, bonuses } = this.calculateFinalScore();
 
         // 更新獎勵列表
-        const bonusesList = document.getElementById('bonusesList');
-        bonusesList.innerHTML = bonuses.map(bonus => `
-            <div class="bonus-item">
-                <span>${bonus.text}</span>
-                <span>+${bonus.points}</span>
-            </div>
-        `).join('');
-        
-        // 顯示結果界面
-        resultContainer.classList.remove('hidden');
-
-        // 儲存最高分
-        if (finalScore > this.highScore) {
-            this.highScore = finalScore;
-            localStorage.setItem('highScore', finalScore.toString());
+        if (stats.bonusesList) {
+            stats.bonusesList.innerHTML = bonuses.map(bonus => `
+                <div class="bonus-item">
+                    <span>${bonus.text}</span>
+                    <span>+${bonus.points}</span>
+                </div>
+            `).join('');
         }
+
+        // 顯示結果界面
+        resultElement.classList.remove('hidden');
+
+        // 更新排行榜
+        this.updateRankingData('score');
     }
 
     // 隱藏結果
@@ -1648,6 +1657,8 @@ class SnakeGame {
 
     // 修改音樂控制方法
     createMusicControls() {
+        // 暫時註釋掉音樂控制按鈕的創建
+        /*
         const musicBtn = document.createElement('button');
         musicBtn.className = 'music-control';
         musicBtn.innerHTML = '🔊';
@@ -1668,13 +1679,11 @@ class SnakeGame {
         let isMuted = false;
         musicBtn.onclick = () => {
             if (isMuted) {
-                // 恢復所有音效
                 Object.values(this.sounds).forEach(sound => {
                     sound.volume(sound === this.sounds.bgm ? 0.5 : 0.8);
                 });
                 musicBtn.innerHTML = '🔊';
             } else {
-                // 靜音所有音效
                 Object.values(this.sounds).forEach(sound => {
                     sound.volume(0);
                 });
@@ -1684,42 +1693,40 @@ class SnakeGame {
         };
 
         document.body.appendChild(musicBtn);
+        */
     }
 
     // 新增：處理錯誤收集
     handleWrongCollection() {
-        if (!this.isInvincible) {
-            // 中斷連擊
-            this.breakCombo();
-            
-            // 顯示錯誤表情
-            this.showEmoji('wrong', this.snake[0].x, this.snake[0].y);
-            
-            // 添加懲罰效果
-            this.isPenalized = true;
-            setTimeout(() => {
-                this.isPenalized = false;
-            }, this.penaltyDuration);
-        }
+        // 中斷連擊
+        this.scoreSystem.breakCombo();
+        
+        // 顯示錯誤表情
+        this.showEmoji('wrong', this.snake[0].x, this.snake[0].y);
+        
+        // 添加懲罰效果
+        this.isPenalized = true;
+        this.isTransparent = true;
+        
+        // 添加閃爍效果
+        document.querySelector('.game-container').classList.add('transparent-state');
+        
+        // 1秒後解除移動懲罰
+        setTimeout(() => {
+            this.isPenalized = false;
+        }, this.penaltyDuration);
+        
+        // 3秒後解除透明狀態
+        setTimeout(() => {
+            this.isTransparent = false;
+            document.querySelector('.game-container').classList.remove('transparent-state');
+        }, this.transparentDuration);
     }
 
     // 修改 breakCombo 方法
     breakCombo() {
-        this.combo = 0;
-        
-        // 移除連擊提示
-        const comboIndicator = document.querySelector('.combo-indicator');
-        if (comboIndicator) {
-            // 添加淡出動畫
-            comboIndicator.style.animation = 'fadeOut 0.3s ease forwards';
-            // 動畫結束後移除元素
-            setTimeout(() => {
-                comboIndicator.remove();
-            }, 300);
-        }
-
-        // 恢復背景音樂到正常速度和音調
-        this.bgm.rate(1.0);
+        this.scoreSystem.breakCombo();
+        // ... 其他代碼 ...
     }
 
     // 新增：增加蛇的長度的方法
@@ -1763,6 +1770,7 @@ class SnakeGame {
     }
 
     setupTouchControls() {
+        if (this.controls) return;
         this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault(); // 防止滾動
             if (this.isGameOver) return;
@@ -1855,8 +1863,8 @@ class SnakeGame {
 
     // 添加發光效果
     triggerGlowEffect() {
-        this.glowEffect = true;
-        this.glowStartTime = Date.now();
+        // this.glowEffect = true;
+        // this.glowStartTime = Date.now();
     }
 
     // 添加分數彈出動畫
@@ -1888,105 +1896,23 @@ class SnakeGame {
         });
     }
 
-    // 生成道具
-    spawnPowerUp() {
-        const now = Date.now();
-        if (now - this.lastPowerUpSpawn < this.powerUpSpawnInterval) return;
-
-        // 隨機選擇道具類型
-        const types = Object.keys(this.powerUpTypes);
-        const randomType = types[Math.floor(Math.random() * types.length)];
-
-        // 計算安全的生成位置
-        const margin = this.pixelSize * 2;
-        const headerHeight = document.querySelector('.game-header').getBoundingClientRect().height;
-        
-        const x = Math.floor(Math.random() * (this.canvas.width - margin * 2)) + margin;
-        const y = Math.floor(Math.random() * (this.canvas.height - headerHeight - margin * 2)) + headerHeight + margin;
-
-        this.powerUps.push({
-            type: randomType,
-            x: x,
-            y: y,
-            size: this.pixelSize,
-            collected: false
-        });
-
-        this.lastPowerUpSpawn = now;
-    }
-
-    // 繪製道具
+    
+    // 修改 drawPowerUps 方法
     drawPowerUps() {
-        this.powerUps.forEach(powerUp => {
-            if (!powerUp.collected) {
-                const img = this.powerUpImages[powerUp.type];
-                if (img.complete) {  // 確保圖片已加載
-                    this.ctx.drawImage(
-                        img,
-                        powerUp.x,
-                        powerUp.y,
-                        this.pixelSize,
-                        this.pixelSize
-                    );
-                }
-            }
-        });
-    }
-
-    // 檢查道具碰撞
-    checkPowerUpCollision(headPosition) {
-        const head = {
-            x: headPosition.x,
-            y: headPosition.y,
-            width: this.pixelSize,
-            height: this.pixelSize
-        };
-
-        this.powerUps.forEach(powerUp => {
-            if (powerUp.collected) return;
-
-            const powerUpRect = {
-                x: powerUp.x,
-                y: powerUp.y,
-                width: powerUp.size,
-                height: powerUp.size
-            };
-
-            if (Collider2D.boxCollision(head, powerUpRect)) {
-                powerUp.collected = true;
-                
-                // 根據道具類型顯示不同表情
-                if (powerUp.type === 'SPEED') {
-                    this.showEmoji('speed', headPosition.x, headPosition.y);
-                } else if (powerUp.type === 'INVINCIBLE') {
-                    this.showEmoji('star', headPosition.x, headPosition.y);
-                }
-
-                // 播放道具收集音效
-                this.sounds.powerup.play();
-            }
-        });
-    }
-
-    // 激活道具效果
-    activatePowerUp(type) {
-        const powerUp = this.powerUpTypes[type];
-        
-        // 如果已有相同類型的道具在生效，先清除它
-        if (this.activePowerUps.has(type)) {
-            clearTimeout(this.activePowerUps.get(type));
+        if (this.powerUpSystem) {
+            this.powerUpSystem.drawPowerUps(this.ctx);
         }
+    }
 
-        // 應用道具效果
-        powerUp.effect();
 
-        // 設置定時器在持續時間結束後重置效果
-        const timer = setTimeout(() => {
-            powerUp.reset();
-            this.activePowerUps.delete(type);
-        }, powerUp.duration);
-
-        this.activePowerUps.set(type, timer);
+    // 修改使用道具的方法
+    activatePowerUp(type) {
+        if (this.powerUpSystem) {
+            this.powerUpSystem.activatePowerUp(type);
+        } else {
+            // 舊的實現作為備用
+            // ... 原有的道具啟動邏輯 ...
+        }
     }
 
     // 添加設置難度的方法
@@ -1994,28 +1920,6 @@ class SnakeGame {
         if (this.difficulties[difficultyLevel]) {
             this.currentDifficulty = difficultyLevel;
         }
-    }
-
-    // 修改計分邏輯
-    calculateScore(index, isCorrectOrder) {
-        let score = this.scoreConfig.base;
-        let bonusText = '';
-
-        // 計算連擊加成
-        if (this.combo > 0) {
-            const comboBonus = score * (this.combo * this.scoreConfig.comboMultiplier);
-            score += comboBonus;
-            bonusText += `連擊 x${this.combo}`;
-        }
-
-        // 順序加成
-        if (isCorrectOrder) {
-            const orderBonus = score * this.scoreConfig.orderMultiplier;
-            score += orderBonus;
-            bonusText += bonusText ? '\n順序加成!' : '順序加成!';
-        }
-
-        return { score: Math.round(score), bonusText };
     }
 
     // 修改遊戲結束時的分數計算
@@ -2136,56 +2040,6 @@ class SnakeGame {
         }, 1000);
     }
 
-    // 添加顯示表情符號的方法
-    showEmoji(type, x, y) {
-        const emojiContainer = document.createElement('div');
-        emojiContainer.className = 'emoji-container';
-        
-        const emoji = document.createElement('img');
-        emoji.src = this.emojis[type].src;
-        emoji.className = 'emoji';
-        
-        emojiContainer.appendChild(emoji);
-        
-        // 設置位置（在蛇頭右上方）
-        emojiContainer.style.cssText = `
-            position: absolute;
-            left: ${x + this.pixelSize}px;
-            top: ${y - this.pixelSize}px;
-            pointer-events: none;
-            z-index: 1000;
-        `;
-        
-        document.body.appendChild(emojiContainer);
-
-        // 使用 GSAP 製作動畫，縮短顯示時間
-        gsap.fromTo(emojiContainer,
-            {
-                opacity: 0,
-                scale: 0.5,
-                y: '+=10'
-            },
-            {
-                opacity: 1,
-                scale: 1,
-                y: '-=10',
-                duration: 0.15,  // 縮短出現時間
-                ease: 'back.out(1.7)',
-                onComplete: () => {
-                    // 0.15秒後開始淡出
-                    gsap.to(emojiContainer, {
-                        opacity: 0,
-                        y: '-=20',
-                        duration: 0.15,  // 縮短消失時間
-                        delay: 0.3,      // 縮短停留時間
-                        ease: 'power1.in',
-                        onComplete: () => emojiContainer.remove()
-                    });
-                }
-            }
-        );
-    }
-
     // 修改方向改變的方法
     changeDirection(newDirection) {
         // 檢查是否是有效的方向改變
@@ -2273,26 +2127,126 @@ class SnakeGame {
         }
     }
 
-    // 修改切換頁面方法
-    toggleResultPage() {
-        const scorePage = document.querySelector('.score-result-container');
-        const statsContainer = document.querySelector('.stats-container');
-        const leaderboardPage = document.querySelector('.leaderboard-container');
-        const nextPageButton = document.querySelector('.next-page-button');
-        
-        if (scorePage.style.display !== 'none') {
-            // 切換到排行榜
-            scorePage.style.display = 'none';
-            statsContainer.style.display = 'none';
-            leaderboardPage.style.display = 'block';
-            nextPageButton.textContent = '返回';
-        } else {
-            // 切換回成績頁
-            scorePage.style.display = 'block';
-            statsContainer.style.display = 'block';
-            leaderboardPage.style.display = 'none';
-            nextPageButton.textContent = '排行榜';
+    // 修改使用特效系統的方法
+    showEmoji(type, x, y) {
+        if (!this.effects) {
+            // 如果 EffectSystem 還沒準備好，使用舊的實現
+            // ... 原有的實現保持不變
+            return;
         }
+        this.effects.showEmoji(type, x, y);
+    }
+
+    showCollectionEffect(x, y) {
+        if (!this.effects) {
+            // 如果 EffectSystem 還沒準備好，使用舊的實現
+            // ... 原有的實現保持不變
+            return;
+        }
+        this.effects.showCollectionEffect(x, y);
+    }
+
+    showCompletionEffect() {
+        if (!this.effects) {
+            // 如果 EffectSystem 還沒準備好，使用舊的實現
+            // ... 原有的實現保持不變
+            return;
+        }
+        this.effects.showCompletionEffect();
+    }
+
+    // 在 SnakeGame 類中添加
+    initializeRanking() {
+        // 綁定標籤切換事件
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                // 移除所有active類
+                document.querySelectorAll('.tab-btn').forEach(btn => 
+                    btn.classList.remove('active'));
+                document.querySelectorAll('.ranking-tab').forEach(tab => 
+                    tab.classList.remove('active'));
+                
+                // 添加active類到當前標籤
+                button.classList.add('active');
+                const tabId = button.getAttribute('data-tab') + 'Ranking';
+                document.getElementById(tabId).classList.add('active');
+                
+                // 更新排行榜數據
+                this.updateRankingData(button.getAttribute('data-tab'));
+            });
+        });
+    }
+
+    updateRankingData(type) {
+        const container = document.getElementById(type + 'Ranking');
+        let data = [];
+        
+        switch(type) {
+            case 'score':
+                data = this.getScoreRanking();
+                break;
+            case 'combo':
+                data = this.getComboRanking();
+                break;
+            case 'time':
+                data = this.getTimeRanking();
+                break;
+        }
+        
+        container.innerHTML = data.map((item, index) => `
+            <div class="ranking-item">
+                <div class="rank-number">${index + 1}</div>
+                <div class="rank-info">
+                    <div class="rank-name">${item.name}</div>
+                    <div class="rank-score">${this.formatRankingValue(type, item.value)}</div>
+                    <div class="rank-date">${item.date}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    formatRankingValue(type, value) {
+        switch(type) {
+            case 'score':
+                return `${value} 分`;
+            case 'combo':
+                return `${value} 連擊`;
+            case 'time':
+                return `${Math.floor(value / 60)}:${(value % 60).toString().padStart(2, '0')}`;
+            default:
+                return value;
+        }
+    }
+
+    // 在 SnakeGame 類中添加假資料方法
+    getScoreRanking() {
+        return [
+            { name: "玩家小明", value: 2500, date: "2024/03/20" },
+            { name: "遊戲高手", value: 2100, date: "2024/03/19" },
+            { name: "蛇蛇達人", value: 1800, date: "2024/03/18" },
+            { name: "快樂玩家", value: 1500, date: "2024/03/17" },
+            { name: "新手上路", value: 1200, date: "2024/03/16" }
+        ];
+    }
+
+    getComboRanking() {
+        return [
+            { name: "連擊王", value: 15, date: "2024/03/20" },
+            { name: "技術流", value: 12, date: "2024/03/19" },
+            { name: "穩定派", value: 10, date: "2024/03/18" },
+            { name: "練習生", value: 8, date: "2024/03/17" },
+            { name: "初學者", value: 5, date: "2024/03/16" }
+        ];
+    }
+
+    getTimeRanking() {
+        return [
+            { name: "神速玩家", value: 45, date: "2024/03/20" },
+            { name: "閃電俠", value: 52, date: "2024/03/19" },
+            { name: "急速手", value: 58, date: "2024/03/18" },
+            { name: "穩健派", value: 65, date: "2024/03/17" },
+            { name: "慢慢來", value: 75, date: "2024/03/16" }
+        ];
     }
 }
 

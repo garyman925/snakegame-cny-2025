@@ -1,0 +1,61 @@
+/* 計時器相關樣式 */
+.timer-container {
+    position: fixed;
+    right: 30px;
+    top: 16%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 26px;
+    border-radius: 15px;
+    z-index: 100;
+}
+
+.timer-text {
+    font-family: "Kanit", serif;
+    font-size: 3rem;
+    font-weight: bold;
+    color: #ff0000;
+    line-height: 30px;
+    transition: color 0.3s ease;
+}
+
+.timer-bar {
+    width: 30px;
+    height: 200px;
+    background: #ff2828;
+    border-radius: 5px;
+    transform-origin: bottom;
+    transition: transform 0.3s linear, background-color 0.3s ease;
+}
+
+/* 警告效果 */
+.timer-text.warning {
+    color: #ff0000;
+    animation: timerPulse 1s infinite;
+}
+
+.timer-bar.warning {
+    background: #ff0000;
+    animation: timerBarPulse 1s infinite;
+}
+
+/* 凍結效果 */
+.timer-text.frozen {
+    color: #45c8f1;
+}
+
+.timer-bar.frozen {
+    background: #45c8f1;
+}
+
+@keyframes timerPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes timerBarPulse {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.5); }
+} 

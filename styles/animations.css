@@ -1,0 +1,83 @@
+/* 動畫相關樣式 */
+@keyframes gentleSwing {
+    0% {
+        transform: translateY(-50%) rotate(-2deg);
+    }
+    50% {
+        transform: translateY(-50%) rotate(2deg);
+    }
+    100% {
+        transform: translateY(-50%) rotate(-2deg);
+    }
+}
+
+@keyframes scoreJump {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+@keyframes flash {
+    0%, 100% { 
+        background: rgba(255, 0, 0, 0);
+    }
+    50% { 
+        background: rgba(255, 0, 0, 0.3);
+    }
+}
+
+@keyframes comboTextPulse {
+    0%, 100% {
+        transform: translateX(-50%) scale(1);
+    }
+    50% {
+        transform: translateX(-50%) scale(1.1);
+    }
+}
+
+@keyframes comboAppear {
+    0% {
+        transform: scale(0.5) rotate(-10deg);
+        opacity: 0;
+    }
+    30% {
+        transform: scale(1.5) rotate(5deg);
+        opacity: 1;
+    }
+    60% {
+        transform: scale(0.9) rotate(-3deg);
+    }
+    80% {
+        transform: scale(1.1) rotate(2deg);
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+@keyframes comboDisappear {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}
+
+.collected-words {
+    transform-origin: top center;
+    animation: gentleSwing 4s ease-in-out infinite;
+}
+
+.score-jump {
+    animation: scoreJump 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+.flash-overlay.active {
+    animation: flash 1s ease;
+}
+
+.combo-indicator.active {
+    animation: comboTextPulse 1s infinite;
+} 

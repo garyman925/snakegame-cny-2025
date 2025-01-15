@@ -1,0 +1,68 @@
+/* 收集字相關樣式 */
+.collected-words {
+    position: fixed;
+    left: 50px;
+    top: 25%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    z-index: 100;
+}
+
+.collected-word {
+    width: 60px;
+    height: 60px;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #f00;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform: scale(1);
+}
+
+.collected-word.active {
+    opacity: 1;
+}
+
+.collected-word::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: red;
+    border: 6px solid #ffdd00;
+    transform: rotate(45deg);
+}
+
+.collected-word span {
+    position: relative;
+    z-index: 1;
+    color: #fff;
+    background: transparent;
+}
+
+.collected-word .hint {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 2.5rem;
+    color: #000;
+    white-space: nowrap;
+    opacity: 0.3;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.collected-word.active .hint {
+    opacity: 1;
+}
+
+.collected-word.bounce {
+    animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.collected-word.bounce::before {
+    animation: rotateBorder 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+} 

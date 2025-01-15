@@ -1,0 +1,107 @@
+/* 響應式設計樣式 */
+@media (max-width: 768px) {
+    .mobile-controls {
+        display: flex;
+    }
+    
+    #gameCanvas {
+        max-width: 100%;
+    }
+
+    .timer-bar {
+        display: none;
+    }
+
+    .collected-words {
+        gap: 20px !important;
+        margin-right: 0 !important;
+        transform: translateY(20px) !important;
+    }
+
+    /* 遊戲結束畫面改為垂直排列 */
+    .game-result {
+        min-width: 90vw;
+        padding: 20px;
+        margin-bottom: 0 !important;
+    }
+
+    .score-result-container {
+        flex-direction: column !important;
+        gap: 0 !important;
+        width: 100%;
+    }
+
+    .score-display {
+        flex: none;
+        width: 100%;
+    }
+
+    .result-table {
+        width: 100%;
+        margin-top: 10px;
+        max-height: 300px;
+    }
+
+    .game-result h2 {
+        font-size: 2em;
+        gap: 0 !important;
+        margin-bottom: 0 !important;
+    }
+
+    .score-value {
+        font-size: 4rem;
+    }
+
+    .game-header {
+        flex-direction: column;
+        height: auto;
+        align-items: center;
+        padding: 5px;
+        gap: 0 !important;
+        top: 0 !important;
+    }
+
+    .result-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .next-page-button,
+    .restart-button {
+        width: 100%;
+    }
+}
+
+/* 針對更小的螢幕做額外調整 */
+@media (max-width: 375px) {
+    .collected-words {
+        gap: 15px;
+        margin-right: 40px;
+    }
+
+    .collected-word {
+        width: 45px;
+        height: 45px;
+        font-size: 1.8rem;
+    }
+
+    .timer-text {
+        font-size: 2rem;
+    }
+
+    .game-header {
+        top: 10px;
+        gap: 0 !important;
+    }
+}
+
+@media (max-width: 1200px) {
+    #gameCanvas {
+        width: 100%;
+        height: auto;
+    }
+    
+    .game-container {
+        padding: 10px;
+    }
+} 
