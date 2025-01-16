@@ -287,33 +287,30 @@ export class PowerUpSystem {
     }
 
     // 添加碰撞檢測方法
-    isColliding(headPosition, powerUp) {
-        const head = {
-            x: headPosition.x,
-            y: headPosition.y,
-            width: this.game.pixelSize,
-            height: this.game.pixelSize
-        };
-
-        const powerUpRect = {
-            x: powerUp.x,
-            y: powerUp.y,
-            width: powerUp.size,
-            height: powerUp.size
-        };
-
-        // 檢查是否碰撞
-        return (head.x < powerUpRect.x + powerUpRect.width &&
-                head.x + head.width > powerUpRect.x &&
-                head.y < powerUpRect.y + powerUpRect.height &&
-                head.y + head.height > powerUpRect.y);
-    }
-
     checkCollision(headPosition) {
         if (!this.powerUps) return;
 
-        this.powerUps.forEach((powerUp, index) => {
-            if (this.isColliding(headPosition, powerUp)) {
+        // 使用 filter 而不是 forEach，這樣我們可以同時移除已收集的道具
+        this.powerUps = this.powerUps.filter((powerUp, index) => {
+            if (powerUp.collected) return false;  // 已收集的道具直接移除
+
+            // 創建碰撞檢測區域
+            const head = {
+                x: headPosition.x,
+                y: headPosition.y,
+                width: this.game.pixelSize,
+                height: this.game.pixelSize
+            };
+
+            const powerUpRect = {
+                x: powerUp.x,
+                y: powerUp.y,
+                width: powerUp.size,
+                height: powerUp.size
+            };
+
+            // 檢查是否碰撞
+            if (Collider2D.boxCollision(head, powerUpRect)) {
                 // 顯示收集效果
                 if (this.game.effects) {
                     this.game.effects.showEmoji('powerup', powerUp.x, powerUp.y);
@@ -322,14 +319,15 @@ export class PowerUpSystem {
                 // 啟動道具效果
                 this.activatePowerUp(powerUp.type);
                 
-                // 移除已收集的道具
-                this.powerUps.splice(index, 1);
-                
                 // 播放收集音效
                 if (this.game.audio) {
                     this.game.audio.playSound('powerup');
                 }
+
+                return false;  // 移除已收集的道具
             }
+
+            return true;  // 保留未收集的道具
         });
     }
 } 

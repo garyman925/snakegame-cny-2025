@@ -139,6 +139,17 @@ import('./src/game/TimerSystem.js')
         console.error('無法載入 TimerSystem 模組:', err);
     });
 
+// 在文件頂部添加引入
+let GameResultSystem;
+import('./src/game/GameResultSystem.js')
+    .then(module => {
+        GameResultSystem = module.GameResultSystem;
+        console.log('GameResult 模組已成功載入');
+    })
+    .catch(err => {
+        console.error('無法載入 GameResult 模組:', err);
+    });
+
 class SnakeGame {
     constructor() {
         // 首先初始化基本屬性
@@ -541,6 +552,15 @@ class SnakeGame {
         if (ComboSystem) {
             this.comboSystem = new ComboSystem(this);
         }
+
+        // 確保GameResultSystem最後初始化
+        Promise.all([
+            // ... 其他系統的初始化 ...
+        ]).then(() => {
+            if (GameResultSystem) {
+                this.gameResultSystem = new GameResultSystem(this);
+            }
+        });
     }
 
     initConfettiSystem() {
@@ -609,7 +629,7 @@ class SnakeGame {
         }
 
         // 隱藏結果顯示
-        this.hideGameResult();
+        //this.hideGameResult();
         
         // 清空並準備新的詞組
         this.clearCollectedWords();
@@ -638,6 +658,15 @@ class SnakeGame {
                     setTimeout(() => {
                         this.audio.playSound('crash');
                     }, 200);
+                }
+
+                // 重置道具系統
+                if (this.powerUpSystem) {
+                    this.powerUpSystem.powerUps = [];
+                    this.powerUpSystem.lastPowerUpSpawn = Date.now();
+                    // 立即生成第一個道具
+                    this.powerUpSystem.spawnPowerUp();
+                    console.log('PowerUpSystem 已重置並生成初始道具');
                 }
             });
         } catch (error) {
@@ -1033,7 +1062,9 @@ class SnakeGame {
 
 
         // 繪製道具
-        this.drawPowerUps();
+        if (this.powerUpSystem) {
+            this.powerUpSystem.drawPowerUps(this.ctx);
+        }
 
         if (this.isDebugging) {
             this.updateDebugInfo();
@@ -1133,18 +1164,22 @@ class SnakeGame {
             for (let i = 4; i < this.snake.length; i++) {
                 const segment = this.snake[i];
                 if (head.x === segment.x && head.y === segment.y) {
-                    console.log('檢測到即將碰撞！');
                     this.handleGameOver('你咬到自己了！');
                     return;
                 }
             }
 
-            // 如果沒有碰撞，更新蛇的位置
+            // 更新蛇的位置
             this.snake.unshift(head);
             this.snake.pop();
             
             this.animationProgress = 0;
             this.lastPosition = JSON.parse(JSON.stringify(this.snake));
+
+            // 在完成移動後檢查道具碰撞
+            if (this.powerUpSystem) {
+                this.powerUpSystem.checkCollision(head);
+            }
         }
 
         // 檢查食物碰撞
@@ -1157,6 +1192,9 @@ class SnakeGame {
         // 立即結束遊戲
         this.isGameOver = true;
         this.isPaused = true;
+        
+        // 隱藏遊戲容器
+        document.querySelector('.game-container').classList.remove('game-started');
         
         // 停止所有系統
         if (this.powerUps) {
@@ -1176,42 +1214,19 @@ class SnakeGame {
             this.gameLoop = null;
         }
         
-        // 更新遊戲統計資料
+        // 更新最終分數和統計資料
         this.updateGameStats();
         
-        // 設置遊戲結束原因
-        this.gameOverReason = reason;
-        
-        // 顯示結果視窗
-        const gameResult = document.getElementById('gameResult');
-        const gameOverReason = document.querySelector('.game-over-reason');
-        
-        if (gameOverReason) {
-            gameOverReason.textContent = reason;
+        // 確保 gameResultSystem 存在
+        if (!this.gameResultSystem) {
+            console.warn('GameResultSystem 未初始化，正在創建新實例');
+            this.gameResultSystem = new GameResultSystem(this);
         }
         
-        if (gameResult) {
-            gameResult.classList.remove('hidden');
-            
-            // 更新分數顯示
-            const finalScoreElement = document.getElementById('finalScore');
-            if (finalScoreElement) {
-                finalScoreElement.textContent = this.score;
-            }
-            
-            // 更新統計數據
-            const totalCollected = document.getElementById('totalCollected');
-            const perfectCollects = document.getElementById('perfectCollects');
-            const maxCombo = document.getElementById('maxCombo');
-            
-            if (totalCollected) totalCollected.textContent = this.stats.totalCollected;
-            if (perfectCollects) perfectCollects.textContent = this.stats.perfectCollects;
-            if (maxCombo && this.comboSystem) maxCombo.textContent = this.comboSystem.getMaxCombo();
-            
-            // 更新排行榜
-            this.updateRankingData('score');
-            console.log('遊戲結果視窗已顯示');
-        }
+        // 延遲一幀顯示結果，確保 DOM 更新完成
+        requestAnimationFrame(() => {
+            this.gameResultSystem.showGameResult(reason);
+        });
     }
 
     // 添加新方法：獲取插值後的蛇頭位置
@@ -1545,71 +1560,71 @@ class SnakeGame {
     }
 
     // 添加顯示結果的方法
-    showGameResult() {
-        const resultElement = document.getElementById('gameResult');
-        if (!resultElement) {
-            console.error('找不到 gameResult 元素');
-            return;
-        }
+    // showGameResult() {
+    //     const resultElement = document.getElementById('gameResult');
+    //     if (!resultElement) {
+    //         console.error('找不到 gameResult 元素');
+    //         return;
+    //     }
 
-        // 設置結束原因
-        const reasonElement = resultElement.querySelector('.game-over-reason');
-        if (reasonElement) {
-            reasonElement.textContent = this.gameOverReason;
-        }
+    //     // 設置結束原因
+    //     const reasonElement = resultElement.querySelector('.game-over-reason');
+    //     if (reasonElement) {
+    //         reasonElement.textContent = this.gameOverReason;
+    //     }
 
-        // 更新分數
-        const scoreDisplay = resultElement.querySelector('.score-value');
-        if (scoreDisplay) {
-        scoreDisplay.textContent = this.score;
-        }
+    //     // 更新分數
+    //     const scoreDisplay = resultElement.querySelector('.score-value');
+    //     if (scoreDisplay) {
+    //     scoreDisplay.textContent = this.score;
+    //     }
 
-        // 更新完成的祝賀詞列表
-        const completedWordsList = resultElement.querySelector('#completedWordsList');
-        if (completedWordsList) {
-        completedWordsList.innerHTML = this.completedGreetings.map(greeting => `
-            <tr>
-                <td>${greeting}</td>
-            </tr>
-        `).join('');
-        }
+    //     // 更新完成的祝賀詞列表
+    //     const completedWordsList = resultElement.querySelector('#completedWordsList');
+    //     if (completedWordsList) {
+    //     completedWordsList.innerHTML = this.completedGreetings.map(greeting => `
+    //         <tr>
+    //             <td>${greeting}</td>
+    //         </tr>
+    //     `).join('');
+    //     }
 
-        // 更新統計數據
-        const stats = {
-            totalCollected: resultElement.querySelector('#totalCollected'),
-            perfectCollects: resultElement.querySelector('#perfectCollects'),
-            maxCombo: resultElement.querySelector('#maxCombo'),
-            bonusesList: resultElement.querySelector('#bonusesList')
-        };
+    //     // 更新統計數據
+    //     const stats = {
+    //         totalCollected: resultElement.querySelector('#totalCollected'),
+    //         perfectCollects: resultElement.querySelector('#perfectCollects'),
+    //         maxCombo: resultElement.querySelector('#maxCombo'),
+    //         bonusesList: resultElement.querySelector('#bonusesList')
+    //     };
 
-        if (stats.totalCollected) stats.totalCollected.textContent = this.stats.totalCollected;
-        if (stats.perfectCollects) stats.perfectCollects.textContent = this.stats.perfectCollects;
-        if (stats.maxCombo) stats.maxCombo.textContent = this.comboSystem.getMaxCombo();
+    //     if (stats.totalCollected) stats.totalCollected.textContent = this.stats.totalCollected;
+    //     if (stats.perfectCollects) stats.perfectCollects.textContent = this.stats.perfectCollects;
+    //     if (stats.maxCombo) stats.maxCombo.textContent = this.comboSystem.getMaxCombo();
 
-        // 計算最終分數和獎勵
-        const { finalScore, bonuses } = this.calculateFinalScore();
+    //     // 計算最終分數和獎勵
+    //     const { finalScore, bonuses } = this.calculateFinalScore();
 
-        // 更新獎勵列表
-        if (stats.bonusesList) {
-            stats.bonusesList.innerHTML = bonuses.map(bonus => `
-            <div class="bonus-item">
-                <span>${bonus.text}</span>
-                <span>+${bonus.points}</span>
-            </div>
-        `).join('');
-        }
+    //     // 更新獎勵列表
+    //     if (stats.bonusesList) {
+    //         stats.bonusesList.innerHTML = bonuses.map(bonus => `
+    //         <div class="bonus-item">
+    //             <span>${bonus.text}</span>
+    //             <span>+${bonus.points}</span>
+    //         </div>
+    //     `).join('');
+    //     }
         
-        // 顯示結果界面
-        resultElement.classList.remove('hidden');
+    //     // 顯示結果界面
+    //     resultElement.classList.remove('hidden');
 
-        // 更新排行榜
-        this.updateRankingData('score');
-    }
+    //     // 更新排行榜
+    //     this.updateRankingData('score');
+    // }
 
-    // 隱藏結果
-    hideGameResult() {
-        this.resultElement.classList.add('hidden');
-    }
+    // // 隱藏結果
+    // hideGameResult() {
+    //     this.resultElement.classList.add('hidden');
+    // }
 
     // 修改 resizeCanvas 方法
     resizeCanvas() {
@@ -2316,8 +2331,10 @@ class SnakeGame {
         }
 
         // 更新道具系統
-        if (this.powerUps) {
-            this.powerUps.update();
+        if (this.powerUpSystem) {
+            this.powerUpSystem.update();
+            // 檢查道具碰撞
+            this.powerUpSystem.checkCollision(head);
         }
 
         // 檢查連擊時間
@@ -2353,6 +2370,10 @@ class SnakeGame {
         
         console.log('遊戲統計資料已更新:', this.stats);
     }
+
+    // 移除 resetGame 方法，改用 gameResultSystem.resetGame()
+
+    // ... 其他方法 ...
 }
 
 window.onload = () => {
