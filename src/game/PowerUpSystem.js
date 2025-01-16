@@ -15,80 +15,62 @@ export class PowerUpSystem {
         this.powerUps = [];
         this.powerUpImages = {};
         this.activePowerUps = new Map();
-        this.powerUpSpawnInterval = 10000;
-        this.lastPowerUpSpawn = 0;
         
-        // 定義道具類型
-        this.powerUpTypes = {
-            SPEED: {
-                name: '加速',
-                color: '#ffff00',
-                duration: 5000,
-                image: 'img/tool-flash.png',
-                effect: () => {
-                    this.game.speedMultiplier = 1.5;
-                    if (this.game.sounds) {
-                        this.game.sounds.powerup.play();
-                    }
-                    this.game.isSpeedUp = true;
-                    console.log('✓ 速度加成效果已啟動');
-                },
-                reset: () => {
-                    this.game.speedMultiplier = 1;
-                    this.game.isSpeedUp = false;
-                    console.log('✓ 速度加成效果已重置');
-                }
-            },
-            INVINCIBLE: {
-                name: '無敵',
-                color: '#ff00ff',
-                duration: 3000,
-                image: 'img/tool-star.png',
-                effect: () => {
-                    this.game.isInvincible = true;
-                    if (this.game.sounds) {
-                        this.game.sounds.powerup.play();
-                    }
-                    console.log('✓ 無敵效果已啟動');
-                },
-                reset: () => {
-                    this.game.isInvincible = false;
-                    console.log('✓ 無敵效果已重置');
-                }
-            },
-            TIME_FREEZE: {
-                name: '時間暫停',
-                color: '#00ffff',
-                duration: 3000,
-                image: 'img/tool-timer.png',
-                effect: () => {
-                    if (this.game.timerSystem) {
-                        this.game.timerSystem.freezeTime();
-                    }
-                    if (this.game.sounds) {
-                        this.game.sounds.powerup.play();
-                    }
-                    // 添加閃光動畫
-                    document.querySelector('.game-container').classList.add('time-freeze-effect');
-                    console.log('✓ 時間暫停效果已啟動');
-                },
-                reset: () => {
-                    if (this.game.timerSystem) {
-                        this.game.timerSystem.unfreezeTime();
-                    }
-                    // 移除閃光動畫
-                    document.querySelector('.game-container').classList.remove('time-freeze-effect');
-                    console.log('✓ 時間暫停效果已重置');
-                }
-            }
-        };
-
+        // 修改道具生成相關設置
+        this.maxPowerUpsPerRound = 3;  // 每題目最多3個道具
+        this.currentRoundPowerUps = 0;  // 當前題目已生成的道具數量
+        this.powerUpSpawnInterval = 5000;  // 固定間隔5秒
+        this.lastPowerUpSpawn = 0;  // 初始化為0，確保第一個道具會立即生成
+        
+        // 初始化道具圖片和其他設置
         this.initializePowerUps();
-        console.log('✓ PowerUpSystem 初始化完成');
+        
+        // 開始道具生成計時器
+        this.startPowerUpTimer();
+    }
 
-        // 添加提示元素容器
-        this.powerUpNotification = null;
-        this.createNotificationElement();
+    // 添加道具生成計時器
+    startPowerUpTimer() {
+        // 清除可能存在的舊計時器
+        if (this.powerUpTimer) {
+            clearInterval(this.powerUpTimer);
+        }
+
+        // 設置新的計時器，每5秒檢查一次是否需要生成道具
+        this.powerUpTimer = setInterval(() => {
+            if (this.currentRoundPowerUps < this.maxPowerUpsPerRound) {
+                this.spawnPowerUp();
+                this.currentRoundPowerUps++;
+                console.log(`已生成第 ${this.currentRoundPowerUps} 個道具，共 ${this.maxPowerUpsPerRound} 個`);
+            }
+        }, this.powerUpSpawnInterval);
+    }
+
+    // 修改重置方法
+    resetRoundPowerUps() {
+        // 清除現有的道具
+        this.powerUps = [];
+        // 重置計數器
+        this.currentRoundPowerUps = 0;
+        // 重置最後生成時間
+        this.lastPowerUpSpawn = 0;  // 設為0確保立即生成第一個道具
+        
+        // 重新啟動計時器
+        this.startPowerUpTimer();
+        
+        // 立即生成第一個道具
+        this.spawnPowerUp();
+        this.currentRoundPowerUps++;
+        
+        console.log('道具系統已重置，並生成第一個道具');
+    }
+
+    // 清理方法，在遊戲結束時調用
+    cleanup() {
+        if (this.powerUpTimer) {
+            clearInterval(this.powerUpTimer);
+            this.powerUpTimer = null;
+        }
     }
 
     initializePowerUps() {
@@ -228,11 +210,27 @@ export class PowerUpSystem {
     }
 
     update() {
-        // 更新道具相關的邏輯
         const currentTime = Date.now();
-        if (currentTime - this.lastPowerUpSpawn >= this.powerUpSpawnInterval) {
+        const timeSinceLastSpawn = currentTime - this.lastPowerUpSpawn;
+        
+        // 添加調試信息
+        console.log('PowerUpSystem 狀態:', {
+            currentRoundPowerUps: this.currentRoundPowerUps,
+            maxPowerUpsPerRound: this.maxPowerUpsPerRound,
+            timeSinceLastSpawn: timeSinceLastSpawn,
+            spawnInterval: this.powerUpSpawnInterval,
+            shouldSpawn: timeSinceLastSpawn >= this.powerUpSpawnInterval
+        });
+        
+        // 檢查是否需要生成新道具
+        if (this.currentRoundPowerUps < this.maxPowerUpsPerRound && 
+            timeSinceLastSpawn >= this.powerUpSpawnInterval) {
+            
             this.spawnPowerUp();
             this.lastPowerUpSpawn = currentTime;
+            this.currentRoundPowerUps++;
+            
+            console.log(`已生成第 ${this.currentRoundPowerUps} 個道具，共 ${this.maxPowerUpsPerRound} 個`);
         }
     }
 
@@ -246,19 +244,35 @@ export class PowerUpSystem {
             const headerHeight = document.querySelector('.game-header').getBoundingClientRect().height;
             
             // 生成隨機位置
-            const x = Math.floor(Math.random() * (this.game.canvas.width - margin * 2)) + margin;
-            const y = Math.floor(Math.random() * (this.game.canvas.height - headerHeight - margin * 2)) + headerHeight + margin;
+            let x, y;
+            let validPosition = false;
+            let attempts = 0;
+            const maxAttempts = 10;
+
+            while (!validPosition && attempts < maxAttempts) {
+                x = Math.floor(Math.random() * (this.game.canvas.width - margin * 2)) + margin;
+                y = Math.floor(Math.random() * (this.game.canvas.height - headerHeight - margin * 2)) + headerHeight + margin;
+                
+                // 檢查是否與蛇身重疊
+                validPosition = !this.game.snake.some(segment => 
+                    Math.abs(segment.x - x) < this.game.pixelSize * 2 && 
+                    Math.abs(segment.y - y) < this.game.pixelSize * 2
+                );
+                
+                attempts++;
+            }
 
             // 創建新的道具
-            this.powerUps.push({
+            const newPowerUp = {
                 type: randomType,
                 x: x,
                 y: y,
                 size: this.game.pixelSize,
                 collected: false
-            });
-
-            console.log(`✓ 生成了新的 ${this.powerUpTypes[randomType].name} 道具`);
+            };
+            
+            this.powerUps.push(newPowerUp);
+            console.log(`✓ 生成了新的 ${this.powerUpTypes[randomType].name} 道具，位置: (${x}, ${y})`);
         } catch (error) {
             console.error('✗ 生成道具失敗:', error);
         }
@@ -330,4 +344,75 @@ export class PowerUpSystem {
             return true;  // 保留未收集的道具
         });
     }
+
+    // 定義道具類型
+    powerUpTypes = {
+        SPEED: {
+            name: '加速',
+            color: '#ffff00',
+            duration: 5000,
+            image: 'img/tool-flash.png',
+            effect: () => {
+                this.game.speedMultiplier = 3.0;  // 加速時的速度
+                document.querySelector('.game-container').classList.add('speed-up-state');
+                if (this.game.sounds) {
+                    this.game.sounds.powerup.play();
+                }
+                this.game.isSpeedUp = true;
+                console.log('✓ 速度加成效果已啟動，當前速度倍率:', this.game.speedMultiplier);
+            },
+            reset: () => {
+                this.game.speedMultiplier = 1.0;  // 確保重置為基礎速度
+                document.querySelector('.game-container').classList.remove('speed-up-state');
+                this.game.isSpeedUp = false;
+                console.log('✓ 速度加成效果已重置');
+            }
+        },
+        INVINCIBLE: {
+            name: '無敵',
+            color: '#ff00ff',
+            duration: 3000,
+            image: 'img/tool-star.png',
+            effect: () => {
+                this.game.isInvincible = true;
+                // 添加無敵狀態的視覺效果
+                document.querySelector('.game-container').classList.add('invincible-state');
+                if (this.game.sounds) {
+                    this.game.sounds.powerup.play();
+                }
+                console.log('✓ 無敵效果已啟動');
+            },
+            reset: () => {
+                this.game.isInvincible = false;
+                // 移除無敵狀態的視覺效果
+                document.querySelector('.game-container').classList.remove('invincible-state');
+                console.log('✓ 無敵效果已重置');
+            }
+        },
+        TIME_FREEZE: {
+            name: '時間暫停',
+            color: '#00ffff',
+            duration: 3000,
+            image: 'img/tool-timer.png',
+            effect: () => {
+                if (this.game.timerSystem) {
+                    this.game.timerSystem.freezeTime();
+                }
+                if (this.game.sounds) {
+                    this.game.sounds.powerup.play();
+                }
+                // 添加閃光動畫
+                document.querySelector('.game-container').classList.add('time-freeze-effect');
+                console.log('✓ 時間暫停效果已啟動');
+            },
+            reset: () => {
+                if (this.game.timerSystem) {
+                    this.game.timerSystem.unfreezeTime();
+                }
+                // 移除閃光動畫
+                document.querySelector('.game-container').classList.remove('time-freeze-effect');
+                console.log('✓ 時間暫停效果已重置');
+            }
+        }
+    };
 } 

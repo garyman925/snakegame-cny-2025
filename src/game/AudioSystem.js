@@ -12,8 +12,7 @@ export class AudioSystem {
             complete: new Howl({ src: ['snd/beep.mp3'], volume: 0.8 }),
             powerup: new Howl({ src: ['snd/speed-up.mp3'], volume: 0.8 }),
             combo: new Howl({
-                src: ['snd/combo-snd.mp3'],
-                loop: true,
+                src: ['snd/crash.mp3'],
                 volume: 0.8,
                 autoplay: false
             }),

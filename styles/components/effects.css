@@ -295,4 +295,14 @@
 
 .effect-duration-display.invincible-effect {
     color: #a544c4;
+}
+
+.speed-up-state {
+    animation: speedUpPulse 0.5s infinite;
+}
+
+@keyframes speedUpPulse {
+    0% { filter: brightness(1); }
+    50% { filter: brightness(1.2); }
+    100% { filter: brightness(1); }
 } 

@@ -260,7 +260,7 @@ class SnakeGame {
         // 添加動畫相關屬性
         this.animationProgress = 0;
         this.lastPosition = null;
-        this.moveSpeed = 0.15; // 控制移動速度，數值越小移動越慢
+        this.moveSpeed = 0.1;  // 基礎移動速度
         
         // 修改遊戲循環的間隔時間，使動畫更流暢
         this.frameInterval = 1000/60; // 60fps 改為 30fps
@@ -561,6 +561,9 @@ class SnakeGame {
                 this.gameResultSystem = new GameResultSystem(this);
             }
         });
+
+        // 設置初始速度倍率
+        this.speedMultiplier = 1.0;
     }
 
     initConfettiSystem() {
@@ -736,6 +739,11 @@ class SnakeGame {
         if (isInitial) {
             this.setupCanvasSize();
             this.spawnFood();
+        }
+
+        // 重置道具系統的計數
+        if (this.powerUpSystem) {
+            this.powerUpSystem.resetRoundPowerUps();
         }
     }
 
@@ -1137,10 +1145,10 @@ class SnakeGame {
     }
 
     move() {
-        // 在懲罰狀態下不移動
         if (this.isPenalized) return;
 
-        this.animationProgress += this.moveSpeed;
+        // 使用速度倍率計算實際移動速度
+        this.animationProgress += (this.moveSpeed * this.speedMultiplier);
         
         // 當動畫進度達到或超過1時，完成一次完整移動
         if (this.animationProgress >= 1) {
@@ -1176,14 +1184,12 @@ class SnakeGame {
             this.animationProgress = 0;
             this.lastPosition = JSON.parse(JSON.stringify(this.snake));
 
-            // 在完成移動後檢查道具碰撞
+            // 檢查食物和道具碰撞
+            this.checkFoodCollision(head);  // 移到這裡
             if (this.powerUpSystem) {
                 this.powerUpSystem.checkCollision(head);
             }
         }
-
-        // 檢查食物碰撞
-        this.checkFoodCollision(this.snake[0]);
     }
 
     handleGameOver(reason) {
@@ -1227,6 +1233,11 @@ class SnakeGame {
         requestAnimationFrame(() => {
             this.gameResultSystem.showGameResult(reason);
         });
+        
+        // 清理道具系統
+        if (this.powerUpSystem) {
+            this.powerUpSystem.cleanup();
+        }
     }
 
     // 添加新方法：獲取插值後的蛇頭位置
@@ -1257,7 +1268,6 @@ class SnakeGame {
     // 修改檢查食物碰撞的方法
     checkFoodCollision(headPosition) {
         if (this.isTransparent) return; 
-        if (this.isPenalized) return;
 
         const head = {
             x: headPosition.x,
@@ -1287,9 +1297,7 @@ class SnakeGame {
 
                 // 確保 comboSystem 已初始化
                 if (this.comboSystem) {
-                this.comboSystem.increaseCombo();
-                } else {
-                    console.warn('ComboSystem 尚未初始化');
+                    this.comboSystem.increaseCombo();
                 }
 
                 // 計算分數
@@ -1316,7 +1324,6 @@ class SnakeGame {
                     this.completedGreetings.push(this.currentWords.join(''));
                     this.showCompletionAnimation(this.currentWords);
                     
-                    
                     this.currentGreetingIndex++;
                     
                     if (this.currentGreetingIndex >= this.greetingsData.length) {
@@ -1330,44 +1337,53 @@ class SnakeGame {
         });
 
         // 檢查誘餌食物碰撞
-            this.decoyFoods.forEach((decoy, index) => {
-                const decoyRect = {
-                    x: decoy.x,
-                    y: decoy.y,
+        this.decoyFoods.forEach((decoy, index) => {
+            const decoyRect = {
+                x: decoy.x,
+                y: decoy.y,
                 width: decoy.size,
                 height: decoy.size
-                };
+            };
 
-                if (Collider2D.boxCollision(head, decoyRect)) {
-                // 確保 comboSystem 已初始化
-                if (this.comboSystem) {
-                this.comboSystem.resetCombo();
+            if (Collider2D.boxCollision(head, decoyRect)) {
+                // 如果是無敵狀態，不觸發懲罰效果
+                if (!this.isInvincible) {
+                    // 確保 comboSystem 已初始化
+                    if (this.comboSystem) {
+                        this.comboSystem.resetCombo();
+                    }
+                    
+                    // 顯示錯誤表情
+                    if (this.effects) {
+                        this.effects.showEmoji('wrong', this.snake[0].x, this.snake[0].y);
+                    }
+                    
+                    // 添加懲罰效果
+                    this.isPenalized = true;
+                    this.isTransparent = true;
+                    
+                    // 添加閃爍效果
+                    document.querySelector('.game-container').classList.add('transparent-state');
+                    
+                    // 1秒後解除移動懲罰
+                    setTimeout(() => {
+                        this.isPenalized = false;
+                    }, this.penaltyDuration);
+                    
+                    // 3秒後解除透明狀態
+                    setTimeout(() => {
+                        this.isTransparent = false;
+                        document.querySelector('.game-container').classList.remove('transparent-state');
+                    }, this.transparentDuration);
                 } else {
-                    console.warn('ComboSystem 尚未初始化');
+                    // 在無敵狀態下碰到錯誤食物的效果
+                    if (this.effects) {
+                        this.effects.showEmoji('invincible', this.snake[0].x, this.snake[0].y);
+                    }
+                    if (this.audio) {
+                        this.audio.playSound('invincible');
+                    }
                 }
-                
-                // 顯示錯誤表情
-                if (this.effects) {
-                    this.effects.showEmoji('wrong', this.snake[0].x, this.snake[0].y);
-                }
-                
-                // 添加懲罰效果
-                this.isPenalized = true;
-                this.isTransparent = true;
-                
-                // 添加閃爍效果
-                document.querySelector('.game-container').classList.add('transparent-state');
-                
-                // 1秒後解除移動懲罰
-                setTimeout(() => {
-                    this.isPenalized = false;
-                }, this.penaltyDuration);
-                
-                // 3秒後解除透明狀態
-                setTimeout(() => {
-                    this.isTransparent = false;
-                    document.querySelector('.game-container').classList.remove('transparent-state');
-                }, this.transparentDuration);
             }
         });
     }
@@ -2332,9 +2348,7 @@ class SnakeGame {
 
         // 更新道具系統
         if (this.powerUpSystem) {
-            this.powerUpSystem.update();
-            // 檢查道具碰撞
-            this.powerUpSystem.checkCollision(head);
+            this.powerUpSystem.update();  // 只更新道具系統，不檢查碰撞
         }
 
         // 檢查連擊時間
