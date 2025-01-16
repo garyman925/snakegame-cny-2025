@@ -84,6 +84,28 @@ import('./src/game/DebugSystem.js')
         console.error('無法載入 Debug 模組:', err);
     });
 
+// 在文件頂部添加引入
+let DifficultySystem;
+import('./src/game/DifficultySystem.js')
+    .then(module => {
+        DifficultySystem = module.DifficultySystem;
+        console.log('Difficulty 模組已成功載入');
+    })
+    .catch(err => {
+        console.error('無法載入 Difficulty 模組:', err);
+    });
+
+// 在文件頂部添加引入
+let ConfettiSystem;
+import('./src/game/ConfettiSystem.js')
+    .then(module => {
+        ConfettiSystem = module.ConfettiSystem;
+        console.log('Confetti 模組已成功載入');
+    })
+    .catch(err => {
+        console.error('無法載入 Confetti 模組:', err);
+    });
+
 class SnakeGame {
     constructor() {
         // 首先初始化基本屬性
@@ -218,8 +240,7 @@ class SnakeGame {
         this.correctFoods = [];  // 保留這行
         this.decoyFoods = [];    // 保留這行
 
-        // 初始化音樂
-        this.initAudio();
+
 
         // 添加懲罰相關屬性
         this.isPenalized = false;
@@ -315,80 +336,16 @@ class SnakeGame {
         // this.glowDuration = 500; // 發光持續時間（毫秒）
         // this.glowStartTime = 0;
 
-        // 添加難度相關設置
-        this.difficulties = {
-            EASY: {
-                name: '簡單',
-                moveSpeed: 0.1,
-                powerUpFrequency: 15000,  // 15秒一個道具
-                scoreMultiplier: 1
-            },
-            NORMAL: {
-                name: '普通',
-                moveSpeed: 0.15,
-                powerUpFrequency: 10000,  // 10秒一個道具
-                scoreMultiplier: 1.5
-            },
-            HARD: {
-                name: '困難',
-                moveSpeed: 0.2,
-                powerUpFrequency: 8000,   // 8秒一個道具
-                scoreMultiplier: 2
-            }
-        };
+        // 初始化難度系統
+        if (DifficultySystem) {
+            this.difficultySystem = new DifficultySystem(this);
+        }
 
-        // 修改預設難度為簡單
-        this.currentDifficulty = 'EASY';
-
+  
         // 初始化分數顯示
         this.scoreDisplay = document.querySelector('.current-score');
 
-        // 添加 combo 音效
-        this.sounds.combo = new Howl({
-            src: ['snd/combo.mp3'],
-            rate: 1.0  // 初始音調
-        });
 
-        // 在音效初始化部分添加轉向音效
-        this.sounds = {
-            bgm: new Howl({
-                src: ['snd/theme-song.mp3'],
-                loop: true,
-                volume: 0.5,
-                rate: 1.0,  // 添加初始速率
-                autoplay: false
-            }),
-            collect: new Howl({
-                src: ['snd/drip.mp3'],
-                volume: 0.8
-            }),
-            complete: new Howl({
-                src: ['snd/beep.mp3'],
-                volume: 0.8
-            }),
-            powerup: new Howl({
-                src: ['snd/speed-up.mp3'],
-                volume: 0.8
-            }),
-            combo: new Howl({
-                src: ['snd/combo.mp3'],
-                volume: 0.8,
-                rate: 1.0
-            }),
-            turn: new Howl({
-                src: ['snd/turn.mp3'],
-                volume: 0.5
-            }),
-            crash: new Howl({ 
-                src: ['snd/crash.mp3'] 
-            })
-        };
-
-        // 為了保持兼容性，保留 bgm 引用
-        this.bgm = this.sounds.bgm;
-
-        // 添加音樂控制按鈕
-        this.createMusicControls();
 
         // 添加 debug 相關屬性
         this.isDebugging = false;
@@ -498,6 +455,42 @@ class SnakeGame {
             this.logoAnimator = new module.LogoAnimator();
             this.logoAnimator.playEnterAnimation();
         });
+
+        // 等待所有系統載入完成後再初始化紙碎系統
+        Promise.all([
+            new Promise(resolve => {
+                if (typeof confetti !== 'undefined' && ConfettiSystem) {
+                    resolve();
+                } else {
+                    const checkLoaded = setInterval(() => {
+                        if (typeof confetti !== 'undefined' && ConfettiSystem) {
+                            clearInterval(checkLoaded);
+                            resolve();
+                        }
+                    }, 100);
+                }
+            })
+        ]).then(() => {
+            console.log('Confetti system ready to initialize');
+            this.initConfettiSystem();
+        });
+
+        // 初始化音效系統
+        if (AudioSystem) {
+            this.audio = new AudioSystem();
+            // 在初始化時就開始播放背景音樂
+            this.audio.playBGM();
+        }
+    }
+
+    initConfettiSystem() {
+        try {
+            this.confettiSystem = new ConfettiSystem();
+            this.confettiSystem.start();
+            console.log('Confetti system started successfully');
+        } catch (error) {
+            console.error('Failed to initialize confetti system:', error);
+        }
     }
 
     drawInitialScreen() {
@@ -512,77 +505,87 @@ class SnakeGame {
 
     initializeGame() {
         try {
-            // 顯示遊戲界面元素
-            document.querySelector('.game-container').classList.add('game-started');
+            // 等待所有系統準備好
+            this.systemsReady.then(() => {
+                // 顯示遊戲界面元素
+                document.querySelector('.game-container').classList.add('game-started');
 
-            // 重置蛇的位置
-            this.snake = [
-                {x: 100, y: 50},
-                {x: 50, y: 50},
-                {x: 0, y: 50}
-            ];
-            this.direction = 'right';
-            this.score = 0;
-            this.currentWordIndex = 0;
-            this.isGameOver = false;
+                // 重置蛇的位置
+                this.snake = [
+                    {x: 100, y: 50},
+                    {x: 50, y: 50},
+                    {x: 0, y: 50}
+                ];
+                this.direction = 'right';
+                this.score = 0;
+                this.currentWordIndex = 0;
+                this.isGameOver = false;
 
-            // 重新創建背景圖案
-            if (this.backgroundPattern.complete) {
-                const patternCanvas = document.createElement('canvas');
-                const patternContext = patternCanvas.getContext('2d');
-                patternCanvas.width = this.backgroundPattern.width;
-                patternCanvas.height = this.backgroundPattern.height;
-                
-                patternContext.globalAlpha = 0.02;
-                patternContext.drawImage(this.backgroundPattern, 0, 0);
-                
-                this.pattern = this.ctx.createPattern(patternCanvas, 'repeat');
-            }
-
-            // 重置遊戲狀態
-            this.remainingTime = this.gameDuration;
-            this.completedWords = [];
-            this.currentGreetingIndex = 0;
-            this.completedGreetings = [];
-            
-            // 設置遊戲結束時間
-            this.endTime = Date.now() + (this.gameDuration * 1000);
-            
-            // 開始計時
-            if (this.timer) {
-                clearInterval(this.timer);
-            }
-            this.timer = setInterval(() => {
-                const timeLeft = this.updateTimer();
-                if (timeLeft <= 0) {
-                    this.timeUp();
+                // 重新創建背景圖案
+                if (this.backgroundPattern.complete) {
+                    const patternCanvas = document.createElement('canvas');
+                    const patternContext = patternCanvas.getContext('2d');
+                    patternCanvas.width = this.backgroundPattern.width;
+                    patternCanvas.height = this.backgroundPattern.height;
+                    
+                    patternContext.globalAlpha = 0.02;
+                    patternContext.drawImage(this.backgroundPattern, 0, 0);
+                    
+                    this.pattern = this.ctx.createPattern(patternCanvas, 'repeat');
                 }
-            }, 1000);
 
-            // 隱藏結果顯示
-            this.hideGameResult();
-            
-            // 清空並準備新的詞組
-            this.clearCollectedWords();
-            this.selectNextGreeting(true); // 添加參數表示是初始化調用
+                // 重置遊戲狀態
+                this.remainingTime = this.gameDuration;
+                this.completedWords = [];
+                this.currentGreetingIndex = 0;
+                this.completedGreetings = [];
+                
+                // 設置遊戲結束時間
+                this.endTime = Date.now() + (this.gameDuration * 1000);
+                
+                // 開始計時
+                if (this.timer) {
+                    clearInterval(this.timer);
+                }
+                this.timer = setInterval(() => {
+                    const timeLeft = this.updateTimer();
+                    if (timeLeft <= 0) {
+                        this.timeUp();
+                    }
+                }, 1000);
 
-            // 隱藏開始按鈕
-            document.getElementById('startButton').style.display = 'none';
+                // 隱藏結果顯示
+                this.hideGameResult();
+                
+                // 清空並準備新的詞組
+                this.clearCollectedWords();
+                this.selectNextGreeting(true); // 添加參數表示是初始化調用
 
-            // 初始化動畫狀態
-            this.animationProgress = 0;
-            this.lastPosition = [...this.snake];
+                // 隱藏開始按鈕
+                document.getElementById('startButton').style.display = 'none';
 
-            // 開始播放背景音樂
-            if (!this.bgm.playing()) {
-                this.bgm.play();
-            }
+                // 初始化動畫狀態
+                this.animationProgress = 0;
+                this.lastPosition = [...this.snake];
 
-            // 根據難度設置遊戲參數
-            const difficulty = this.difficulties[this.currentDifficulty];
-            this.moveSpeed = difficulty.moveSpeed;
-            this.powerUpSpawnInterval = difficulty.powerUpFrequency;
-            this.scoreMultiplier = difficulty.scoreMultiplier;
+                // 使用難度系統初始化參數
+                if (this.difficultySystem) {
+                    this.difficultySystem.initializeDifficulty();
+                }
+
+                // 停止紙碎動畫
+                if (this.confettiSystem) {
+                    this.confettiSystem.stop();
+                }
+
+                // 只播放開始遊戲的音效
+                if (this.audio) {
+                    this.audio.playSound('crash');
+                    setTimeout(() => {
+                        this.audio.playSound('crash');
+                    }, 200);
+                }
+            });
         } catch (error) {
             console.error('遊戲初始化失敗:', error);
         }
@@ -590,6 +593,15 @@ class SnakeGame {
 
     // 修改 selectNextGreeting 方法
     selectNextGreeting(isInitial = false) {
+        // 只有在不是初始化時才播放音效
+        if (!isInitial && this.audio) {
+            // 連續播放兩次 crash 音效
+            this.audio.playSound('crash');
+            setTimeout(() => {
+                this.audio.playSound('crash');
+            }, 200);  // 200毫秒後播放第二次
+        }
+
         const collectedWords = document.querySelector('.collected-words');
         collectedWords.classList.add('changing');
         
@@ -1129,8 +1141,7 @@ class SnakeGame {
 
     // 修改檢查食物碰撞的方法
     checkFoodCollision(headPosition) {
-        if (this.isTransparent) return; // 在透明狀態下不檢查碰撞
-        
+        if (this.isTransparent) return; 
         if (this.isPenalized) return;
 
         const head = {
@@ -1157,8 +1168,9 @@ class SnakeGame {
                 // 顯示正確表情
                 this.showEmoji('correct', headPosition.x, headPosition.y);
 
-                // 增加連擊數 - 使用 scoreSystem 的方法
-                this.scoreSystem.increaseCombo();  // 添加這行
+                // 增加連擊數並播放 combo 音效
+                this.combo++;
+                this.handleCombo();
 
                 // 計算分數
                 this.handleCorrectCollection(index, index === this.currentWordIndex);
@@ -1176,15 +1188,15 @@ class SnakeGame {
                     const completionScore = this.scoreConfig.completion;
                     this.handleCorrectCollection(index, index === this.currentWordIndex);
                     
+                    // 播放完成時的紙碎動畫
+                    if (this.confettiSystem) {
+                        this.confettiSystem.celebrate();
+                    }
+                    
                     this.completedGreetings.push(this.currentWords.join(''));
                     this.showCompletionAnimation(this.currentWords);
                     
-                    // 播放兩次完成音效
-                    this.sounds.crash.play();
-                    setTimeout(() => {
-                        this.sounds.crash.play();
-                    }, 200);  // 200毫秒後播放第二次
-                    
+
                     this.currentGreetingIndex++;
                     
                     if (this.currentGreetingIndex >= this.greetingsData.length) {
@@ -1197,21 +1209,24 @@ class SnakeGame {
             }
         });
 
-        // 檢查干擾食物碰撞
-        if (this.decoyFoods && !this.isInvincible) { // 只在非無敵狀態下檢查干擾食物碰撞
-            this.decoyFoods.forEach((decoy, index) => {
-                const decoyRect = {
-                    x: decoy.x,
-                    y: decoy.y,
-                    width: this.pixelSize,
-                    height: this.pixelSize
-                };
+        // 檢查誘餌食物碰撞
+        this.decoyFoods.forEach((decoy, index) => {
+            const decoyRect = {
+                x: decoy.x,
+                y: decoy.y,
+                width: decoy.size,
+                height: decoy.size
+            };
 
-                if (Collider2D.boxCollision(head, decoyRect)) {
-                    this.handleWrongCollection();
-                }
-            });
-        }
+            if (Collider2D.boxCollision(head, decoyRect)) {
+                // 當碰到錯誤食物時重置 combo
+                this.combo = 0;
+                this.handleCombo();
+                
+                // 處理錯誤收集
+                this.handleWrongCollection();
+            }
+        });
     }
 
     // 新增：只生成正確答案的食物位置
@@ -1353,7 +1368,9 @@ class SnakeGame {
         this.isGameOver = true;
         clearInterval(this.gameLoop);
         clearInterval(this.timer);
-        this.bgm.stop();
+        if (this.audio) {
+            this.audio.stopBGM();
+        }
         
         // 設置遊戲結束原因
         this.gameOverReason = reason || '時間到！';
@@ -1377,21 +1394,38 @@ class SnakeGame {
             this.gameLoop = setInterval(() => {
                 this.move();
                 this.draw();
-            }, this.frameInterval);
+            }, this.frameInterval); // 使用新的幀間隔
         });
+
+        // document.addEventListener('keydown', (e) => {
+        //     if (this.isGameOver) return;
+            
+        //     switch(e.key) {
+        //         case 'ArrowUp':
+        //             this.changeDirection('up');  // 使用 changeDirection 方法
+        //             break;
+        //         case 'ArrowDown':
+        //             this.changeDirection('down');
+        //             break;
+        //         case 'ArrowLeft':
+        //             this.changeDirection('left');
+        //             break;
+        //         case 'ArrowRight':
+        //             this.changeDirection('right');
+        //             break;
+        //     }
+        // });
 
         // 添加難度選擇按鈕的事件監聽
         document.querySelectorAll('.difficulty-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                // 移除其他按鈕的選中狀態
                 document.querySelectorAll('.difficulty-btn').forEach(b => 
                     b.classList.remove('selected'));
-                
-                // 添加當前按鈕的選中狀態
                 btn.classList.add('selected');
                 
-                // 設置難度
-                this.setDifficulty(btn.dataset.difficulty);
+                if (this.difficultySystem) {
+                    this.difficultySystem.setDifficulty(btn.dataset.difficulty);
+                }
             });
         });
 
@@ -1595,7 +1629,9 @@ class SnakeGame {
             this.pausedTimeRemaining = this.remainingTime;
 
             // 暫停背景音樂
-            this.bgm.pause();
+            if (this.audio) {
+                this.audio.pauseBGM();
+            }
         }
     }
 
@@ -1611,90 +1647,14 @@ class SnakeGame {
             this.remainingTime = this.pausedTimeRemaining;
 
             // 恢復背景音樂
-            this.bgm.play();
+            if (this.audio) {
+                this.audio.playBGM();
+            }
         }
     }
 
-    initAudio() {
-        // 音效管理器
-        this.sounds = {
-            bgm: new Howl({
-                src: ['snd/theme-song.mp3'],
-                loop: true,
-                volume: 0.5,
-                rate: 1.0,  // 添加初始速率
-                autoplay: false
-            }),
-            collect: new Howl({
-                src: ['snd/drip.mp3'],
-                volume: 0.8
-            }),
-            complete: new Howl({
-                src: ['snd/beep.mp3'],
-                volume: 0.8
-            }),
-            powerup: new Howl({
-                src: ['snd/speed-up.mp3'],
-                volume: 0.8
-            }),
-            combo: new Howl({
-                src: ['snd/combo.mp3'],
-                volume: 0.8,
-                rate: 1.0
-            }),
-            turn: new Howl({
-                src: ['snd/turn.mp3'],
-                volume: 0.5
-            }),
-            crash: new Howl({ 
-                src: ['snd/crash.mp3'] 
-            })
-        };
+   
 
-        // 為了保持兼容性，保留 bgm 引用
-        this.bgm = this.sounds.bgm;
-    }
-
-    // 修改音樂控制方法
-    createMusicControls() {
-        // 暫時註釋掉音樂控制按鈕的創建
-        /*
-        const musicBtn = document.createElement('button');
-        musicBtn.className = 'music-control';
-        musicBtn.innerHTML = '🔊';
-        musicBtn.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: none;
-            background: rgba(255, 255, 255, 0.8);
-            cursor: pointer;
-            z-index: 1000;
-            font-size: 20px;
-        `;
-
-        let isMuted = false;
-        musicBtn.onclick = () => {
-            if (isMuted) {
-                Object.values(this.sounds).forEach(sound => {
-                    sound.volume(sound === this.sounds.bgm ? 0.5 : 0.8);
-                });
-                musicBtn.innerHTML = '🔊';
-            } else {
-                Object.values(this.sounds).forEach(sound => {
-                    sound.volume(0);
-                });
-                musicBtn.innerHTML = '🔈';
-            }
-            isMuted = !isMuted;
-        };
-
-        document.body.appendChild(musicBtn);
-        */
-    }
 
     // 新增：處理錯誤收集
     handleWrongCollection() {
@@ -2053,8 +2013,8 @@ class SnakeGame {
         }
 
         // 如果方向確實改變了，播放轉向音效
-        if (this.direction !== newDirection) {
-            this.sounds.turn.play();
+        if (this.direction !== newDirection && this.audio) {
+            this.audio.playSound('turn');
         }
 
         this.direction = newDirection;
@@ -2247,6 +2207,70 @@ class SnakeGame {
             { name: "穩健派", value: 65, date: "2024/03/17" },
             { name: "慢慢來", value: 75, date: "2024/03/16" }
         ];
+    }
+
+    // 在處理 combo 的地方
+    handleCombo() {
+        if (this.combo > 1) {  // 改為大於 1，表示至少連續答對 2 個字
+            // 確保 combo 音效正在播放
+            if (this.audio) {
+                this.audio.startComboSound();
+            }
+            // 更新 combo 顯示
+            let comboDisplay = document.querySelector('.combo-display');
+            if (comboDisplay) {
+                comboDisplay.textContent = `COMBO TIME x${this.combo}`;
+                comboDisplay.style.display = 'block';
+            } else {
+                // 如果不存在則創建新的 combo 顯示
+                comboDisplay = document.createElement('div');
+                comboDisplay.className = 'combo-display';
+                comboDisplay.textContent = `COMBO TIME x${this.combo}`;
+                document.querySelector('.game-container').appendChild(comboDisplay);
+            }
+        } else {
+            // 當 combo 結束時停止音效
+            if (this.audio) {
+                this.audio.stopComboSound();
+            }
+            // 隱藏 combo 顯示
+            let comboDisplay = document.querySelector('.combo-display');
+            if (comboDisplay) {
+                comboDisplay.style.display = 'none';
+            }
+        }
+    }
+
+    // 在遊戲結束時也要確保停止音效
+    gameOver() {
+        if (this.audio) {
+            this.audio.stopComboSound();
+        }
+        // ... 其他遊戲結束代碼 ...
+    }
+
+    // 在收集到字時
+    collectFood() {
+        // 播放收集音效
+        if (this.audio) {
+            this.audio.playSound('collect');
+        }
+
+        // ... 其他收集相關代碼 ...
+    }
+
+    // 在新題目出現時
+    generateNewWords() {
+        // 播放新題目音效
+        if (this.audio) {
+            this.audio.playSound('crash');
+        }
+
+        // 獲取新的題目
+        if (this.currentGreetingIndex < this.greetings.length) {
+            this.currentWords = this.greetings[this.currentGreetingIndex];
+            // ... 其他生成題目的代碼 ...
+        }
     }
 }
 
