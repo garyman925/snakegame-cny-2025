@@ -31,17 +31,32 @@ export class ComboSystem {
                 this.game.audio.startComboSound();
             }
             
-            // 更新顯示
+            // 獲取或創建 combo 顯示元素
             let comboDisplay = document.querySelector('.combo-display');
-            if (comboDisplay) {
-                comboDisplay.textContent = `COMBO TIME x${this.combo}`;
-                comboDisplay.style.display = 'block';
-            } else {
+            if (!comboDisplay) {
                 comboDisplay = document.createElement('div');
                 comboDisplay.className = 'combo-display';
-                comboDisplay.textContent = `COMBO TIME x${this.combo}`;
                 document.querySelector('.game-container').appendChild(comboDisplay);
             }
+
+            // 更新文字
+            comboDisplay.textContent = `COMBO TIME x${this.combo}`;
+            
+            // 重置動畫
+            comboDisplay.classList.remove('active');
+            // 強制瀏覽器重繪
+            void comboDisplay.offsetWidth;
+            // 觸發新的動畫
+            comboDisplay.classList.add('active');
+
+            // 保存引用
+            this.comboDisplay = comboDisplay;
+            
+            // 監聽動畫結束
+            comboDisplay.addEventListener('animationend', () => {
+                comboDisplay.classList.remove('active');
+            }, { once: true });
+
         } else {
             // 停止 combo 音效
             if (this.game.audio) {
@@ -49,9 +64,8 @@ export class ComboSystem {
             }
             
             // 隱藏顯示
-            let comboDisplay = document.querySelector('.combo-display');
-            if (comboDisplay) {
-                comboDisplay.style.display = 'none';
+            if (this.comboDisplay) {
+                this.comboDisplay.classList.remove('active');
             }
         }
     }
@@ -69,5 +83,22 @@ export class ComboSystem {
     // 獲取最高連擊數
     getMaxCombo() {
         return this.maxCombo;
+    }
+
+    showComboText() {
+        if (!this.comboDisplay) return;
+        // 移除之前的動畫
+        this.comboDisplay.classList.remove('active');
+        
+        // 強制重繪
+        void this.comboDisplay.offsetWidth;
+        
+        // 添加新的動畫
+        this.comboDisplay.classList.add('active');
+        
+        // 監聽動畫結束
+        this.comboDisplay.addEventListener('animationend', () => {
+            this.comboDisplay.classList.remove('active');
+        }, { once: true });
     }
 } 

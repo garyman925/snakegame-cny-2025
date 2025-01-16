@@ -1,0 +1,82 @@
+/* Combo 顯示相關樣式 */
+.combo-display {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-shadow: -3px 3px 0px #ffffff;
+    -webkit-text-stroke-width: thin;
+    color: #944eff;
+    font-family: "Kanit", serif;
+    font-style: normal;
+    font-size: 2.5rem;
+    font-weight: bold;
+    z-index: 1000;
+    opacity: 0;
+    text-align: center;
+}
+
+.combo-display.active {
+    animation: comboBounceIn 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+@keyframes comboBounceIn {
+    0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 1;
+    }
+    70% {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 1;
+    }
+    85% {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 0.8;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 0;
+    }
+}
+
+/* Combo 指示器樣式 */
+.combo-indicator {
+    white-space: nowrap;
+    position: absolute;
+    top: 130%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #ff6b6b;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.combo-indicator.active {
+    opacity: 1;
+}
+
+.combo-indicator .combo-text {
+    color: #ff6b6b;
+    font-size: 3.5rem;
+    font-family: "Kanit", serif;
+    text-shadow: none;
+}
+
+.combo-indicator .combo-count {
+    color: #ff4757;
+    font-size: 2rem;
+} 

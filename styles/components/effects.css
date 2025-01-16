@@ -109,48 +109,6 @@
     pointer-events: none;
 }
 
-.combo-indicator {
-    white-space: nowrap;
-    position: absolute;
-    top: 130%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    padding: 10px 20px;
-    border-radius: 20px;
-    font-size: 24px;
-    font-weight: bold;
-    color: #ff6b6b;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-}
-
-.combo-indicator.active {
-    opacity: 1;
-}
-
-.combo-indicator .combo-text {
-    color: #ff6b6b;
-    font-size: 3.5rem;
-    font-family: "Kanit", serif;
-    text-shadow: none;
-}
-
-.combo-indicator .combo-count {
-    color: #ff4757;
-    font-size: 2rem;
-}
-
-@keyframes fadeOut {
-    from { opacity: 1; }
-    to { opacity: 0; }
-}
-
 .powerup-notification {
     position: fixed;
     top: -50px;
