@@ -217,49 +217,50 @@ export class PowerUpSystem {
         }
     }
 
-    // 添加檢查碰撞的方法
+    // 添加碰撞檢測方法
+    isColliding(headPosition, powerUp) {
+        const head = {
+            x: headPosition.x,
+            y: headPosition.y,
+            width: this.game.pixelSize,
+            height: this.game.pixelSize
+        };
+
+        const powerUpRect = {
+            x: powerUp.x,
+            y: powerUp.y,
+            width: powerUp.size,
+            height: powerUp.size
+        };
+
+        // 檢查是否碰撞
+        return (head.x < powerUpRect.x + powerUpRect.width &&
+                head.x + head.width > powerUpRect.x &&
+                head.y < powerUpRect.y + powerUpRect.height &&
+                head.y + head.height > powerUpRect.y);
+    }
+
     checkCollision(headPosition) {
-        try {
-            // 確保 Collider2D 已載入
-            if (!Collider2D) {
-                console.warn('✗ PowerUpSystem: Collider2D 尚未準備好');
-                return;
-            }
+        if (!this.powerUps) return;
 
-            const head = {
-                x: headPosition.x,
-                y: headPosition.y,
-                width: this.game.pixelSize,
-                height: this.game.pixelSize
-            };
-
-            this.powerUps.forEach(powerUp => {
-                if (powerUp.collected) return;
-
-                const powerUpRect = {
-                    x: powerUp.x,
-                    y: powerUp.y,
-                    width: powerUp.size,
-                    height: powerUp.size
-                };
-
-                if (Collider2D.boxCollision(head, powerUpRect)) {
-                    powerUp.collected = true;
-                    
-                    // 根據道具類型顯示不同表情
-                    if (powerUp.type === 'SPEED') {
-                        this.game.showEmoji('speed', headPosition.x, headPosition.y);
-                    } else if (powerUp.type === 'INVINCIBLE') {
-                        this.game.showEmoji('star', headPosition.x, headPosition.y);
-                    }
-
-                    // 啟動道具效果
-                    this.activatePowerUp(powerUp.type);
-                    console.log(`✓ 收集到 ${this.powerUpTypes[powerUp.type].name} 道具`);
+        this.powerUps.forEach((powerUp, index) => {
+            if (this.isColliding(headPosition, powerUp)) {
+                // 顯示收集效果
+                if (this.game.effects) {
+                    this.game.effects.showEmoji('star', powerUp.x, powerUp.y);
                 }
-            });
-        } catch (error) {
-            console.error('✗ PowerUpSystem: 檢查道具碰撞失敗:', error);
-        }
+
+                // 啟動道具效果
+                this.activatePowerUp(powerUp.type);
+                
+                // 移除已收集的道具
+                this.powerUps.splice(index, 1);
+                
+                // 播放收集音效
+                if (this.game.audio) {
+                    this.game.audio.playSound('powerup');
+                }
+            }
+        });
     }
 } 

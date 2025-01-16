@@ -106,6 +106,28 @@ import('./src/game/ConfettiSystem.js')
         console.error('無法載入 Confetti 模組:', err);
     });
 
+// 引入 ComboSystem
+let ComboSystem;
+import('./src/game/ComboSystem.js')
+    .then(module => {
+        ComboSystem = module.ComboSystem;
+        console.log('ComboSystem 模組已成功載入');
+    })
+    .catch(err => {
+        console.error('無法載入 ComboSystem 模組:', err);
+    });
+
+// 引入 DrawFoodSystem
+let DrawFoodSystem;
+import('./src/game/DrawFoodSystem.js')
+    .then(module => {
+        DrawFoodSystem = module.DrawFoodSystem;
+        console.log('DrawFoodSystem 模組已成功載入');
+    })
+    .catch(err => {
+        console.error('無法載入 DrawFoodSystem 模組:', err);
+    });
+
 class SnakeGame {
     constructor() {
         // 首先初始化基本屬性
@@ -227,13 +249,6 @@ class SnakeGame {
         
         // 修改遊戲循環的間隔時間，使動畫更流暢
         this.frameInterval = 1000/60; // 60fps 改為 30fps
-
-        // 添加食物動畫相關屬性
-        this.foodAnimationDistance = this.pixelSize * 3; // 感應距離
-        this.foodAnimations = {
-            correct: [],
-            decoys: []
-        };
 
         // 初始化食物相關屬性
         this.food = null;
@@ -423,9 +438,39 @@ class SnakeGame {
                         }
                     }, 100);
                 }
-            })
+            }),
+            new Promise(resolve => {
+                if (DrawFoodSystem) {
+                    this.drawFoodSystem = new DrawFoodSystem(this);
+                    resolve();
+                } else {
+                    const checkInterval = setInterval(() => {
+                        if (DrawFoodSystem) {
+                            this.drawFoodSystem = new DrawFoodSystem(this);
+                            clearInterval(checkInterval);
+                            resolve();
+                        }
+                    }, 100);
+                }
+            }),
+            new Promise(resolve => {
+                if (ComboSystem) {
+                    this.comboSystem = new ComboSystem(this);
+                    resolve();
+                } else {
+                    const checkInterval = setInterval(() => {
+                        if (ComboSystem) {
+                            this.comboSystem = new ComboSystem(this);
+                            clearInterval(checkInterval);
+                            resolve();
+                        }
+                    }, 100);
+                }
+            }),
         ]).then(() => {
             console.log('✅ 所有遊戲系統初始化完成');
+            // 初始化完成後再生成食物
+            this.spawnFood();
         }).catch(err => {
             console.error('❌ 系統初始化失敗:', err);
         });
@@ -480,6 +525,11 @@ class SnakeGame {
             this.audio = new AudioSystem();
             // 在初始化時就開始播放背景音樂
             this.audio.playBGM();
+        }
+
+        // 初始化 ComboSystem
+        if (ComboSystem) {
+            this.comboSystem = new ComboSystem(this);
         }
     }
 
@@ -657,13 +707,15 @@ class SnakeGame {
     }
 
     spawnFood() {
+        // 確保 drawFoodSystem 已經初始化
+        if (!this.drawFoodSystem) {
+            console.warn('DrawFoodSystem 尚未初始化');
+            return;
+        }
+
         // 清除現有的食物
         this.correctFoods = [];  // 修改這行
         this.decoyFoods = [];    // 修改這行
-        this.foodAnimations = {
-            correct: [],
-            decoys: []
-        };
 
         // 重新設置畫布大小以確保尺寸正確
         this.setupCanvasSize();
@@ -818,19 +870,11 @@ class SnakeGame {
 
         // 初始化食物動畫
         this.correctFoods.forEach(food => {
-            this.foodAnimations.correct.push({
-                x: food.x,
-                y: food.y,
-                offsetY: 0
-            });
+            this.drawFoodSystem.addFoodAnimation(food);
         });
 
         this.decoyFoods.forEach(food => {
-            this.foodAnimations.decoys.push({
-                x: food.x,
-                y: food.y,
-                offsetY: 0
-            });
+            this.drawFoodSystem.addDecoyAnimation(food);
         });
     }
 
@@ -967,60 +1011,33 @@ class SnakeGame {
             }
         }
 
-        // 確保 correctFoods 存在才進行繪製
-        if (this.correctFoods && this.correctFoods.length > 0) {
+        // 確保 correctFoods 存在且 drawFoodSystem 已初始化
+        if (this.correctFoods && this.correctFoods.length > 0 && this.drawFoodSystem) {
             this.correctFoods.forEach((food, index) => {
                 if (!food.collected) {
-                    this.drawFoodWithAnimation(
-                        food,
-                        this.foodAnimations.correct[index],
-                        this.snake[0]
-                    );
+                    this.drawFoodSystem.drawCorrectFood(food, this.snake[0]);
                 }
             });
         }
 
-        // 確保 decoyFoods 存在才進行繪製
-        if (this.decoyFoods && this.decoyFoods.length > 0) {
+        // 確保 decoyFoods 存在且 drawFoodSystem 已初始化
+        if (this.decoyFoods && this.decoyFoods.length > 0 && this.drawFoodSystem) {
             this.decoyFoods.forEach((decoy, index) => {
-                this.drawFoodWithAnimation(
-                    decoy,
-                    this.foodAnimations.decoys[index],
-                    this.snake[0]
-                );
+                this.drawFoodSystem.drawDecoy(decoy, this.snake[0]);
             });
         }
 
-        // 如果處於發光狀態，添加發光效果
-        // if (this.glowEffect) {
-        //     const elapsed = Date.now() - this.glowStartTime;
-        //     if (elapsed < this.glowDuration) {
-        //         const alpha = 1 - (elapsed / this.glowDuration);
-        //         this.ctx.save();
-        //         this.ctx.strokeStyle = `rgba(255, 255, 0, ${alpha})`;
-        //         this.ctx.lineWidth = 10;
-        //         this.ctx.shadowColor = 'yellow';
-        //         this.ctx.shadowBlur = 20;
-        //         // 為蛇身每個部分添加發光描邊
-        //         this.snake.forEach(segment => {
-        //             this.ctx.strokeRect(
-        //                 segment.x,
-        //                 segment.y,
-        //                 this.pixelSize,
-        //                 this.pixelSize
-        //             );
-        //         });
-        //         this.ctx.restore();
-        //     } else {
-        //         this.glowEffect = false;
-        //     }
-        // }
 
         // 繪製道具
         this.drawPowerUps();
 
         if (this.isDebugging) {
             this.updateDebugInfo();
+        }
+
+        // 確保 drawFoodSystem 存在且已初始化
+        if (this.drawFoodSystem) {
+            this.drawFoodSystem.drawFood();
         }
     }
 
@@ -1166,11 +1183,16 @@ class SnakeGame {
                 food.collected = true;
 
                 // 顯示正確表情
-                this.showEmoji('correct', headPosition.x, headPosition.y);
+                if (this.effects) {
+                    this.effects.showEmoji('correct', headPosition.x, headPosition.y);
+                }
 
-                // 增加連擊數並播放 combo 音效
-                this.combo++;
-                this.handleCombo();
+                // 確保 comboSystem 已初始化
+                if (this.comboSystem) {
+                this.comboSystem.increaseCombo();
+                } else {
+                    console.warn('ComboSystem 尚未初始化');
+                }
 
                 // 計算分數
                 this.handleCorrectCollection(index, index === this.currentWordIndex);
@@ -1219,12 +1241,35 @@ class SnakeGame {
             };
 
             if (Collider2D.boxCollision(head, decoyRect)) {
-                // 當碰到錯誤食物時重置 combo
-                this.combo = 0;
-                this.handleCombo();
+                // 確保 comboSystem 已初始化
+                if (this.comboSystem) {
+                this.comboSystem.resetCombo();
+                } else {
+                    console.warn('ComboSystem 尚未初始化');
+                }
                 
-                // 處理錯誤收集
-                this.handleWrongCollection();
+                // 顯示錯誤表情
+                if (this.effects) {
+                    this.effects.showEmoji('wrong', this.snake[0].x, this.snake[0].y);
+                }
+                
+                // 添加懲罰效果
+                this.isPenalized = true;
+                this.isTransparent = true;
+                
+                // 添加閃爍效果
+                document.querySelector('.game-container').classList.add('transparent-state');
+                
+                // 1秒後解除移動懲罰
+                setTimeout(() => {
+                    this.isPenalized = false;
+                }, this.penaltyDuration);
+                
+                // 3秒後解除透明狀態
+                setTimeout(() => {
+                    this.isTransparent = false;
+                    document.querySelector('.game-container').classList.remove('transparent-state');
+                }, this.transparentDuration);
             }
         });
     }
@@ -1271,7 +1316,7 @@ class SnakeGame {
         };
 
         // 更新主要食物的動畫狀態
-        this.foodAnimations.main = { rotation: 0, isAnimating: false };
+        this.drawFoodSystem.addFoodAnimation(this.food);
     }
 
     // 修改蛇身碰撞檢測
@@ -1397,24 +1442,6 @@ class SnakeGame {
             }, this.frameInterval); // 使用新的幀間隔
         });
 
-        // document.addEventListener('keydown', (e) => {
-        //     if (this.isGameOver) return;
-            
-        //     switch(e.key) {
-        //         case 'ArrowUp':
-        //             this.changeDirection('up');  // 使用 changeDirection 方法
-        //             break;
-        //         case 'ArrowDown':
-        //             this.changeDirection('down');
-        //             break;
-        //         case 'ArrowLeft':
-        //             this.changeDirection('left');
-        //             break;
-        //         case 'ArrowRight':
-        //             this.changeDirection('right');
-        //             break;
-        //     }
-        // });
 
         // 添加難度選擇按鈕的事件監聽
         document.querySelectorAll('.difficulty-btn').forEach(btn => {
@@ -1523,7 +1550,7 @@ class SnakeGame {
 
         if (stats.totalCollected) stats.totalCollected.textContent = this.stats.totalCollected;
         if (stats.perfectCollects) stats.perfectCollects.textContent = this.stats.perfectCollects;
-        if (stats.maxCombo) stats.maxCombo.textContent = this.maxCombo;
+        if (stats.maxCombo) stats.maxCombo.textContent = this.comboSystem.getMaxCombo();
 
         // 計算最終分數和獎勵
         const { finalScore, bonuses } = this.calculateFinalScore();
@@ -1662,7 +1689,9 @@ class SnakeGame {
         this.scoreSystem.breakCombo();
         
         // 顯示錯誤表情
-        this.showEmoji('wrong', this.snake[0].x, this.snake[0].y);
+        if (this.effects) {
+            this.effects.showEmoji('wrong', this.snake[0].x, this.snake[0].y);
+        }
         
         // 添加懲罰效果
         this.isPenalized = true;
@@ -1898,11 +1927,11 @@ class SnakeGame {
         }
 
         // 連擊獎勵
-        if (this.maxCombo >= 5) {
-            const comboBonus = this.maxCombo * 100;
+        if (this.comboSystem.getMaxCombo() >= 5) {
+            const comboBonus = this.comboSystem.getMaxCombo() * 100;
             finalScore += comboBonus;
             bonuses.push({
-                text: `最高連擊 x${this.maxCombo}`,
+                text: `最高連擊 x${this.comboSystem.getMaxCombo()}`,
                 points: comboBonus
             });
         }
@@ -2065,7 +2094,7 @@ class SnakeGame {
             fps: Math.round(1000 / this.frameInterval),
             snakePosition: `(${this.snake[0].x}, ${this.snake[0].y})`,
             direction: this.direction,
-            combo: this.combo,
+            combo: this.comboSystem.getCombo(),
             score: this.score
         };
 
@@ -2087,15 +2116,7 @@ class SnakeGame {
         }
     }
 
-    // 修改使用特效系統的方法
-    showEmoji(type, x, y) {
-        if (!this.effects) {
-            // 如果 EffectSystem 還沒準備好，使用舊的實現
-            // ... 原有的實現保持不變
-            return;
-        }
-        this.effects.showEmoji(type, x, y);
-    }
+
 
     showCollectionEffect(x, y) {
         if (!this.effects) {
@@ -2207,38 +2228,6 @@ class SnakeGame {
             { name: "穩健派", value: 65, date: "2024/03/17" },
             { name: "慢慢來", value: 75, date: "2024/03/16" }
         ];
-    }
-
-    // 在處理 combo 的地方
-    handleCombo() {
-        if (this.combo > 1) {  // 改為大於 1，表示至少連續答對 2 個字
-            // 確保 combo 音效正在播放
-            if (this.audio) {
-                this.audio.startComboSound();
-            }
-            // 更新 combo 顯示
-            let comboDisplay = document.querySelector('.combo-display');
-            if (comboDisplay) {
-                comboDisplay.textContent = `COMBO TIME x${this.combo}`;
-                comboDisplay.style.display = 'block';
-            } else {
-                // 如果不存在則創建新的 combo 顯示
-                comboDisplay = document.createElement('div');
-                comboDisplay.className = 'combo-display';
-                comboDisplay.textContent = `COMBO TIME x${this.combo}`;
-                document.querySelector('.game-container').appendChild(comboDisplay);
-            }
-        } else {
-            // 當 combo 結束時停止音效
-            if (this.audio) {
-                this.audio.stopComboSound();
-            }
-            // 隱藏 combo 顯示
-            let comboDisplay = document.querySelector('.combo-display');
-            if (comboDisplay) {
-                comboDisplay.style.display = 'none';
-            }
-        }
     }
 
     // 在遊戲結束時也要確保停止音效

@@ -90,49 +90,33 @@ export class EffectSystem {
     }
 
     showEmoji(type, x, y) {
-        const emojiContainer = document.createElement('div');
-        emojiContainer.className = 'emoji-container';
-        
-        const emoji = document.createElement('img');
-        emoji.src = this.emojis[type].src;
+        const emoji = document.createElement('div');
         emoji.className = 'emoji';
-        
-        emojiContainer.appendChild(emoji);
-        
-        emojiContainer.style.cssText = `
+        const img = document.createElement('img');
+        img.src = type === 'correct' ? 'img/emo-heart.png' : 'img/emo-sad.png';
+        img.style.width = '35px';
+        img.style.height = '35px';
+        emoji.appendChild(img);
+
+        emoji.style.cssText = `
             position: absolute;
-            left: ${x + this.game.pixelSize}px;
-            top: ${y - this.game.pixelSize}px;
-            pointer-events: none;
+            left: ${x + this.game.pixelSize/2}px;
+            top: ${y - this.game.pixelSize/2}px;
+            animation: fadeUpAndOut 0.5s ease-out forwards;
             z-index: 1000;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         `;
         
-        document.body.appendChild(emojiContainer);
-
-        gsap.fromTo(emojiContainer,
-            {
-                opacity: 0,
-                scale: 0.5,
-                y: '+=10'
-            },
-            {
-                opacity: 1,
-                scale: 1,
-                y: '-=10',
-                duration: 0.15,
-                ease: 'back.out(1.7)',
-                onComplete: () => {
-                    gsap.to(emojiContainer, {
-                        opacity: 0,
-                        y: '-=20',
-                        duration: 0.15,
-                        delay: 0.3,
-                        ease: 'power1.in',
-                        onComplete: () => emojiContainer.remove()
-                    });
-                }
-            }
-        );
+        document.querySelector('.game-container').appendChild(emoji);
+        
+        // 動畫結束後移除元素
+        setTimeout(() => {
+            emoji.remove();
+        }, 500);
     }
 
     startGlowEffect() {
