@@ -261,4 +261,38 @@
     width: 24px;
     height: 24px;
     object-fit: contain;
+}
+
+/* 道具效果持續時間顯示 */
+.effect-duration-display {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-shadow: -3px 3px 0px #ffffff;
+    -webkit-text-stroke-width: thin;
+    font-family: "Kanit", serif;
+    font-style: normal;
+    font-size: 2.5rem;
+    font-weight: bold;
+    z-index: 1000;
+    opacity: 0;
+    text-align: center;
+}
+
+.effect-duration-display.active {
+    animation: comboBounceIn 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* 不同道具效果的顏色 */
+.effect-duration-display.freeze-effect {
+    color: #2499ee;
+}
+
+.effect-duration-display.speed-effect {
+    color: #fffa35;
+}
+
+.effect-duration-display.invincible-effect {
+    color: #a544c4;
 } 

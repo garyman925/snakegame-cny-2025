@@ -346,10 +346,6 @@ class SnakeGame {
             timeBonus: false     // 是否獲得時間獎勵
         };
 
-        // 視覺效果相關
-        // this.glowEffect = false;
-        // this.glowDuration = 500; // 發光持續時間（毫秒）
-        // this.glowStartTime = 0;
 
         // 初始化難度系統
         if (DifficultySystem) {
@@ -1117,22 +1113,104 @@ class SnakeGame {
         
         // 當動畫進度達到或超過1時，完成一次完整移動
         if (this.animationProgress >= 1) {
-            this.completeMove();
+            const head = {...this.snake[0]};
+            
+            // 根據方向更新頭部位置
+            switch(this.direction) {
+                case 'up': head.y -= this.pixelSize; break;
+                case 'down': head.y += this.pixelSize; break;
+                case 'left': head.x -= this.pixelSize; break;
+                case 'right': head.x += this.pixelSize; break;
+            }
+
+            // 處理邊界
+            if (head.x < 0) head.x = this.canvas.width - this.pixelSize;
+            else if (head.x >= this.canvas.width) head.x = 0;
+            if (head.y < 0) head.y = this.canvas.height - this.pixelSize;
+            else if (head.y >= this.canvas.height) head.y = 0;
+
+            // 檢查是否會撞到自己
+            for (let i = 4; i < this.snake.length; i++) {
+                const segment = this.snake[i];
+                if (head.x === segment.x && head.y === segment.y) {
+                    console.log('檢測到即將碰撞！');
+                    this.handleGameOver('你咬到自己了！');
+                    return;
+                }
+            }
+
+            // 如果沒有碰撞，更新蛇的位置
+            this.snake.unshift(head);
+            this.snake.pop();
+            
             this.animationProgress = 0;
             this.lastPosition = JSON.parse(JSON.stringify(this.snake));
         }
 
-        // 獲取當前蛇頭位置
-        const head = this.getInterpolatedHeadPosition();
-        
-        // 檢查各種碰撞
-        this.checkFoodCollision(head);
-        
+        // 檢查食物碰撞
+        this.checkFoodCollision(this.snake[0]);
+    }
 
-        // 使用新的PowerUpSystem
-        if (this.powerUpSystem) {
-            this.powerUpSystem.update();
-            this.powerUpSystem.checkCollision(head);
+    handleGameOver(reason) {
+        console.log('遊戲結束！原因：', reason);
+        
+        // 立即結束遊戲
+        this.isGameOver = true;
+        this.isPaused = true;
+        
+        // 停止所有系統
+        if (this.powerUps) {
+            this.powerUps.deactivateAllPowerUps();
+        }
+        if (this.audio) {
+            this.audio.stopBGM();
+            this.audio.stopComboSound();
+        }
+        if (this.timerSystem) {
+            this.timerSystem.pauseTimer();
+        }
+        
+        // 清除遊戲循環
+        if (this.gameLoop) {
+            clearInterval(this.gameLoop);
+            this.gameLoop = null;
+        }
+        
+        // 更新遊戲統計資料
+        this.updateGameStats();
+        
+        // 設置遊戲結束原因
+        this.gameOverReason = reason;
+        
+        // 顯示結果視窗
+        const gameResult = document.getElementById('gameResult');
+        const gameOverReason = document.querySelector('.game-over-reason');
+        
+        if (gameOverReason) {
+            gameOverReason.textContent = reason;
+        }
+        
+        if (gameResult) {
+            gameResult.classList.remove('hidden');
+            
+            // 更新分數顯示
+            const finalScoreElement = document.getElementById('finalScore');
+            if (finalScoreElement) {
+                finalScoreElement.textContent = this.score;
+            }
+            
+            // 更新統計數據
+            const totalCollected = document.getElementById('totalCollected');
+            const perfectCollects = document.getElementById('perfectCollects');
+            const maxCombo = document.getElementById('maxCombo');
+            
+            if (totalCollected) totalCollected.textContent = this.stats.totalCollected;
+            if (perfectCollects) perfectCollects.textContent = this.stats.perfectCollects;
+            if (maxCombo && this.comboSystem) maxCombo.textContent = this.comboSystem.getMaxCombo();
+            
+            // 更新排行榜
+            this.updateRankingData('score');
+            console.log('遊戲結果視窗已顯示');
         }
     }
 
@@ -2221,6 +2299,59 @@ class SnakeGame {
             this.currentWords = this.greetings[this.currentGreetingIndex];
             // ... 其他生成題目的代碼 ...
         }
+    }
+
+    update() {
+        if (this.isGameOver || this.isPaused) return;
+
+        // 更新蛇的位置
+        this.move();
+        
+        // 檢查碰撞
+        const head = this.snake[0];
+        if (this.checkCollision(head)) {
+            console.log('檢測到自身碰撞！');
+            this.gameOver('你咬到自己了！');
+            return;
+        }
+
+        // 更新道具系統
+        if (this.powerUps) {
+            this.powerUps.update();
+        }
+
+        // 檢查連擊時間
+        if (this.combo && !this.combo.isInComboWindow()) {
+            this.combo.resetCombo();
+        }
+
+        // 繪製遊戲畫面
+        this.draw();
+    }
+
+    // 添加更新遊戲統計資料的方法
+    updateGameStats() {
+        // 更新最終統計資料
+        this.stats = {
+            ...this.stats,
+            finalScore: this.score,
+            maxCombo: this.comboSystem ? this.comboSystem.getMaxCombo() : 0,
+            completedWords: this.completedGreetings.length,
+            gameTime: Math.floor((Date.now() - this.startTime) / 1000)
+        };
+        
+        // 更新 UI 顯示
+        const finalScoreElement = document.getElementById('finalScore');
+        const totalCollectedElement = document.getElementById('totalCollected');
+        const perfectCollectsElement = document.getElementById('perfectCollects');
+        const maxComboElement = document.getElementById('maxCombo');
+        
+        if (finalScoreElement) finalScoreElement.textContent = this.score;
+        if (totalCollectedElement) totalCollectedElement.textContent = this.stats.totalCollected || 0;
+        if (perfectCollectsElement) perfectCollectsElement.textContent = this.stats.perfectCollects || 0;
+        if (maxComboElement) maxComboElement.textContent = this.stats.maxCombo || 0;
+        
+        console.log('遊戲統計資料已更新:', this.stats);
     }
 }
 

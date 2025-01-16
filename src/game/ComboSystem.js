@@ -40,7 +40,7 @@ export class ComboSystem {
             }
 
             // 更新文字
-            comboDisplay.textContent = `COMBO TIME x${this.combo}`;
+            comboDisplay.textContent = `COMBO x${this.combo}`;
             
             // 重置動畫
             comboDisplay.classList.remove('active');

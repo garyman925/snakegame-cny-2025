@@ -56,7 +56,7 @@ export class ConfettiSystem {
             particleCount: 1,
             spread: 10,
             startVelocity: 0,
-            gravity: 0.4,
+            gravity: 1,
             scalar: 1.2,
             drift: 0,
             ticks: 1000,

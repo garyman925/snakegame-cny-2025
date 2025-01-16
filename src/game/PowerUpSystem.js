@@ -156,6 +156,8 @@ export class PowerUpSystem {
 
             // 顯示效果提示
             this.showNotification(`${powerUpConfig.name}效果啟動！`, powerUpConfig.duration);
+            // 顯示效果時間
+            this.showEffectDuration(powerUpConfig);
 
             // 啟動效果
             powerUpConfig.effect();
@@ -174,6 +176,42 @@ export class PowerUpSystem {
         } catch (error) {
             console.error('✗ 道具啟動失敗:', error);
         }
+    }
+
+    showEffectDuration(powerUpConfig) {
+        // 創建效果持續時間顯示
+        const durationDisplay = document.createElement('div');
+        durationDisplay.className = 'effect-duration-display';
+        
+        // 根據不同道具類型設置不同的文字和樣式
+        let text = '';
+        switch(powerUpConfig.name) {
+            case '時間暫停':
+                text = `時間暫停 ${powerUpConfig.duration/1000}秒`;
+                durationDisplay.classList.add('freeze-effect');
+                break;
+            case '加速':
+                text = `加速 ${powerUpConfig.duration/1000}秒`;
+                durationDisplay.classList.add('speed-effect');
+                break;
+            case '無敵':
+                text = `無敵 ${powerUpConfig.duration/1000}秒`;
+                durationDisplay.classList.add('invincible-effect');
+                break;
+        }
+        
+        durationDisplay.textContent = text;
+        document.querySelector('.game-container').appendChild(durationDisplay);
+        
+        // 添加動畫
+        requestAnimationFrame(() => {
+            durationDisplay.classList.add('active');
+        });
+        
+        // 動畫結束後移除元素
+        durationDisplay.addEventListener('animationend', () => {
+            durationDisplay.remove();
+        });
     }
 
     deactivateAllPowerUps() {
