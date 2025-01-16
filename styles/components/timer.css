@@ -50,6 +50,13 @@
     background: #45c8f1;
 }
 
+/* 時間停止效果 */
+.timer-bar.freezing {
+    animation: freezingPulse 1s infinite;
+    background: linear-gradient(to bottom, #00ffff, #87ceeb);
+    box-shadow: 0 0 10px #00ffff;
+}
+
 @keyframes timerPulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
@@ -58,4 +65,19 @@
 @keyframes timerBarPulse {
     0%, 100% { filter: brightness(1); }
     50% { filter: brightness(1.5); }
+}
+
+@keyframes freezingPulse {
+    0% {
+        opacity: 0.8;
+        filter: brightness(1);
+    }
+    50% {
+        opacity: 1;
+        filter: brightness(1.5);
+    }
+    100% {
+        opacity: 0.8;
+        filter: brightness(1);
+    }
 } 

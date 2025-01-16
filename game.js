@@ -128,6 +128,17 @@ import('./src/game/DrawFoodSystem.js')
         console.error('無法載入 DrawFoodSystem 模組:', err);
     });
 
+// 引入 TimerSystem
+let TimerSystem;
+import('./src/game/TimerSystem.js')
+    .then(module => {
+        TimerSystem = module.TimerSystem;
+        console.log('TimerSystem 模組已成功載入');
+    })
+    .catch(err => {
+        console.error('無法載入 TimerSystem 模組:', err);
+    });
+
 class SnakeGame {
     constructor() {
         // 首先初始化基本屬性
@@ -168,13 +179,6 @@ class SnakeGame {
 
         this.numberOfDecoys = 3;
         this.decoyFoods = [];
-
-        // 修改計時相關的屬性
-        this.gameDuration = 120; // 遊戲時長（秒）
-        this.endTime = 0; // 遊戲結束時間點
-        this.remainingTime = this.gameDuration;
-        this.timer = null;
-        this.completedWords = []; // 記錄完成的祝賀詞
 
         // 添加結果顯示相關的屬性
         this.resultElement = document.getElementById('gameResult');
@@ -262,11 +266,7 @@ class SnakeGame {
         this.penaltyDuration = 1000;  // 1秒停止移動
         this.transparentDuration = 3000;  // 3秒透明處罰時間
         this.isTransparent = false;  // 新增：是否處於透明狀態
-        
-        // 創建閃光效果元素
-        // this.flashOverlay = document.createElement('div');
-        // this.flashOverlay.className = 'flash-overlay';
-        // document.body.appendChild(this.flashOverlay);
+
 
         // 加載背景圖案
         this.backgroundPattern = new Image();
@@ -467,6 +467,20 @@ class SnakeGame {
                     }, 100);
                 }
             }),
+            new Promise(resolve => {
+                if (TimerSystem) {
+                    this.timerSystem = new TimerSystem(this);
+                    resolve();
+                } else {
+                    const checkInterval = setInterval(() => {
+                        if (TimerSystem) {
+                            this.timerSystem = new TimerSystem(this);
+                            clearInterval(checkInterval);
+                            resolve();
+                        }
+                    }, 100);
+                }
+            })
         ]).then(() => {
             console.log('✅ 所有遊戲系統初始化完成');
             // 初始化完成後再生成食物
@@ -594,15 +608,9 @@ class SnakeGame {
         this.endTime = Date.now() + (this.gameDuration * 1000);
         
         // 開始計時
-        if (this.timer) {
-            clearInterval(this.timer);
+        if (this.timerSystem) {
+            this.timerSystem.startTimer();
         }
-        this.timer = setInterval(() => {
-            const timeLeft = this.updateTimer();
-            if (timeLeft <= 0) {
-                this.timeUp();
-            }
-        }, 1000);
 
         // 隱藏結果顯示
         this.hideGameResult();
@@ -1409,7 +1417,7 @@ class SnakeGame {
     gameOver(reason = '') {
         this.isGameOver = true;
         clearInterval(this.gameLoop);
-        clearInterval(this.timer);
+        clearInterval(this.timerSystem.timer);
         if (this.audio) {
             this.audio.stopBGM();
         }
@@ -1456,45 +1464,6 @@ class SnakeGame {
         // 默認選中普通難度
         document.querySelector('[data-difficulty="NORMAL"]').classList.add('selected');
 
-    }
-
-    // 添加計時器更新方法
-    updateTimer() {
-        // 如果時間暫停中，不更新時間
-        if (this.isTimeFrozen) {
-            return this.frozenTimeRemaining;
-        }
-
-        const timeLeft = Math.max(0, this.endTime - Date.now());
-        const totalTime = this.gameDuration * 1000;
-        const percentage = timeLeft / totalTime;
-
-        // 更新時間文字
-        const seconds = Math.ceil(timeLeft / 1000);
-        const timerText = document.querySelector('.timer-text');
-        timerText.textContent = seconds;
-
-        // 更新計時條
-        const timerBar = document.querySelector('.timer-bar');
-        timerBar.style.transform = `scaleY(${percentage})`;
-
-        // 當時間少於 30 秒時添加警告效果
-        if (seconds <= 30 && !this.isTimeFrozen) {
-            timerBar.classList.add('warning');
-            timerText.classList.add('warning');
-        } else {
-            timerBar.classList.remove('warning');
-            timerText.classList.remove('warning');
-        }
-
-        return timeLeft;
-    }
-
-    // 時間到方法
-    timeUp() {
-        if (!this.isGameOver) {
-            this.gameOver('時間到！');
-        }
     }
 
     // 添加顯示結果的方法
@@ -1639,12 +1608,15 @@ class SnakeGame {
         if (!this.isGameOver && !this.isPaused) {
             this.isPaused = true;
             clearInterval(this.gameLoop);
-            clearInterval(this.timer);
+            clearInterval(this.timerSystem.timer);
             this.pausedTimeRemaining = this.remainingTime;
 
             // 暫停背景音樂
             if (this.audio) {
                 this.audio.pauseBGM();
+            }
+            if (this.timerSystem) {
+                this.timerSystem.pauseTimer();
             }
         }
     }
@@ -1657,7 +1629,9 @@ class SnakeGame {
                 this.move();
                 this.draw();
             }, this.frameInterval);  // 使用 frameInterval 而不是固定值
-            this.timer = setInterval(() => this.updateTimer(), 1000);
+            if (this.timerSystem) {
+                this.timerSystem.resumeTimer();
+            }
             this.remainingTime = this.pausedTimeRemaining;
 
             // 恢復背景音樂

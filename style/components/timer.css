@@ -1,0 +1,25 @@
+.timer-bar.warning {
+    background-color: #ff4444;
+    animation: warningPulse 1s infinite;
+}
+
+.timer-bar.freezing {
+    animation: freezingPulse 1s infinite;
+    background: linear-gradient(to bottom, #00ffff, #87ceeb);
+    box-shadow: 0 0 10px #00ffff;
+}
+
+@keyframes freezingPulse {
+    0% {
+        opacity: 0.8;
+        filter: brightness(1);
+    }
+    50% {
+        opacity: 1;
+        filter: brightness(1.5);
+    }
+    100% {
+        opacity: 0.8;
+        filter: brightness(1);
+    }
+} 

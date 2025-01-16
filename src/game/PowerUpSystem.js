@@ -62,16 +62,22 @@ export class PowerUpSystem {
                 duration: 3000,
                 image: 'img/tool-timer.png',
                 effect: () => {
-                    this.game.isTimeFrozen = true;
+                    if (this.game.timerSystem) {
+                        this.game.timerSystem.freezeTime();
+                    }
                     if (this.game.sounds) {
                         this.game.sounds.powerup.play();
                     }
-                    this.game.frozenTimeRemaining = this.game.endTime - Date.now();
+                    // 添加閃光動畫
+                    document.querySelector('.game-container').classList.add('time-freeze-effect');
                     console.log('✓ 時間暫停效果已啟動');
                 },
                 reset: () => {
-                    this.game.isTimeFrozen = false;
-                    this.game.endTime = Date.now() + this.game.frozenTimeRemaining;
+                    if (this.game.timerSystem) {
+                        this.game.timerSystem.unfreezeTime();
+                    }
+                    // 移除閃光動畫
+                    document.querySelector('.game-container').classList.remove('time-freeze-effect');
                     console.log('✓ 時間暫停效果已重置');
                 }
             }
