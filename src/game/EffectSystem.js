@@ -93,7 +93,20 @@ export class EffectSystem {
         const emoji = document.createElement('div');
         emoji.className = 'emoji';
         const img = document.createElement('img');
-        img.src = type === 'correct' ? 'img/emo-heart.png' : 'img/emo-sad.png';
+        // 根據不同類型選擇不同的表情符號
+        switch(type) {
+            case 'correct':
+                img.src = 'img/emo-heart.png';
+                break;
+            case 'wrong':
+                img.src = 'img/emo-sad.png';
+                break;
+            case 'powerup':
+                img.src = 'img/emo-devil.png';
+                break;
+            default:
+                img.src = 'img/emo-heart.png';
+        }
         img.style.width = '35px';
         img.style.height = '35px';
         emoji.appendChild(img);

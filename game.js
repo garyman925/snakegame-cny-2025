@@ -133,7 +133,7 @@ class SnakeGame {
         // 首先初始化基本屬性
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-       
+        
         
         // 檢測是否為移動設備
         this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -356,7 +356,7 @@ class SnakeGame {
             this.difficultySystem = new DifficultySystem(this);
         }
 
-  
+
         // 初始化分數顯示
         this.scoreDisplay = document.querySelector('.current-score');
 
@@ -557,66 +557,66 @@ class SnakeGame {
         try {
             // 等待所有系統準備好
             this.systemsReady.then(() => {
-                // 顯示遊戲界面元素
-                document.querySelector('.game-container').classList.add('game-started');
+        // 顯示遊戲界面元素
+        document.querySelector('.game-container').classList.add('game-started');
 
-                // 重置蛇的位置
-                this.snake = [
-                    {x: 100, y: 50},
-                    {x: 50, y: 50},
-                    {x: 0, y: 50}
-                ];
-                this.direction = 'right';
-                this.score = 0;
-                this.currentWordIndex = 0;
-                this.isGameOver = false;
+        // 重置蛇的位置
+        this.snake = [
+            {x: 100, y: 50},
+            {x: 50, y: 50},
+            {x: 0, y: 50}
+        ];
+        this.direction = 'right';
+        this.score = 0;
+        this.currentWordIndex = 0;
+        this.isGameOver = false;
 
-                // 重新創建背景圖案
-                if (this.backgroundPattern.complete) {
-                    const patternCanvas = document.createElement('canvas');
-                    const patternContext = patternCanvas.getContext('2d');
-                    patternCanvas.width = this.backgroundPattern.width;
-                    patternCanvas.height = this.backgroundPattern.height;
-                    
-                    patternContext.globalAlpha = 0.02;
-                    patternContext.drawImage(this.backgroundPattern, 0, 0);
-                    
-                    this.pattern = this.ctx.createPattern(patternCanvas, 'repeat');
-                }
+        // 重新創建背景圖案
+        if (this.backgroundPattern.complete) {
+            const patternCanvas = document.createElement('canvas');
+            const patternContext = patternCanvas.getContext('2d');
+            patternCanvas.width = this.backgroundPattern.width;
+            patternCanvas.height = this.backgroundPattern.height;
+            
+            patternContext.globalAlpha = 0.02;
+            patternContext.drawImage(this.backgroundPattern, 0, 0);
+            
+            this.pattern = this.ctx.createPattern(patternCanvas, 'repeat');
+        }
 
-                // 重置遊戲狀態
-                this.remainingTime = this.gameDuration;
-                this.completedWords = [];
-                this.currentGreetingIndex = 0;
-                this.completedGreetings = [];
-                
-                // 設置遊戲結束時間
-                this.endTime = Date.now() + (this.gameDuration * 1000);
-                
-                // 開始計時
-                if (this.timer) {
-                    clearInterval(this.timer);
-                }
-                this.timer = setInterval(() => {
-                    const timeLeft = this.updateTimer();
-                    if (timeLeft <= 0) {
-                        this.timeUp();
-                    }
-                }, 1000);
+        // 重置遊戲狀態
+        this.remainingTime = this.gameDuration;
+        this.completedWords = [];
+        this.currentGreetingIndex = 0;
+        this.completedGreetings = [];
+        
+        // 設置遊戲結束時間
+        this.endTime = Date.now() + (this.gameDuration * 1000);
+        
+        // 開始計時
+        if (this.timer) {
+            clearInterval(this.timer);
+        }
+        this.timer = setInterval(() => {
+            const timeLeft = this.updateTimer();
+            if (timeLeft <= 0) {
+                this.timeUp();
+            }
+        }, 1000);
 
-                // 隱藏結果顯示
-                this.hideGameResult();
-                
-                // 清空並準備新的詞組
-                this.clearCollectedWords();
-                this.selectNextGreeting(true); // 添加參數表示是初始化調用
+        // 隱藏結果顯示
+        this.hideGameResult();
+        
+        // 清空並準備新的詞組
+        this.clearCollectedWords();
+        this.selectNextGreeting(true); // 添加參數表示是初始化調用
 
-                // 隱藏開始按鈕
-                document.getElementById('startButton').style.display = 'none';
+        // 隱藏開始按鈕
+        document.getElementById('startButton').style.display = 'none';
 
-                // 初始化動畫狀態
-                this.animationProgress = 0;
-                this.lastPosition = [...this.snake];
+        // 初始化動畫狀態
+        this.animationProgress = 0;
+        this.lastPosition = [...this.snake];
 
                 // 使用難度系統初始化參數
                 if (this.difficultySystem) {
@@ -1120,9 +1120,6 @@ class SnakeGame {
         // 檢查各種碰撞
         this.checkFoodCollision(head);
         
-        // 移除舊的道具生成調用
-        // this.spawnPowerUp();
-        // this.checkPowerUpCollision(head);
 
         // 使用新的PowerUpSystem
         if (this.powerUpSystem) {
@@ -1218,7 +1215,7 @@ class SnakeGame {
                     this.completedGreetings.push(this.currentWords.join(''));
                     this.showCompletionAnimation(this.currentWords);
                     
-
+                    
                     this.currentGreetingIndex++;
                     
                     if (this.currentGreetingIndex >= this.greetingsData.length) {
@@ -1232,15 +1229,15 @@ class SnakeGame {
         });
 
         // 檢查誘餌食物碰撞
-        this.decoyFoods.forEach((decoy, index) => {
-            const decoyRect = {
-                x: decoy.x,
-                y: decoy.y,
+            this.decoyFoods.forEach((decoy, index) => {
+                const decoyRect = {
+                    x: decoy.x,
+                    y: decoy.y,
                 width: decoy.size,
                 height: decoy.size
-            };
+                };
 
-            if (Collider2D.boxCollision(head, decoyRect)) {
+                if (Collider2D.boxCollision(head, decoyRect)) {
                 // 確保 comboSystem 已初始化
                 if (this.comboSystem) {
                 this.comboSystem.resetCombo();
@@ -1459,16 +1456,6 @@ class SnakeGame {
         // 默認選中普通難度
         document.querySelector('[data-difficulty="NORMAL"]').classList.add('selected');
 
-        // 添加 debug 相關按鍵
-        // document.addEventListener('keydown', (e) => {
-        //     if (e.key === 'F3') {  // 使用 F3 鍵切換 debug 模式
-        //         this.toggleDebug();
-        //     } else if (e.key === ' ' && this.isDebugging) {  // 空格鍵繼續遊戲
-        //         this.isDebugging = false;
-        //         this.hideDebugInfo();
-        //         this.resumeGame();
-        //     }
-        // });
     }
 
     // 添加計時器更新方法
@@ -1527,17 +1514,17 @@ class SnakeGame {
         // 更新分數
         const scoreDisplay = resultElement.querySelector('.score-value');
         if (scoreDisplay) {
-            scoreDisplay.textContent = this.score;
+        scoreDisplay.textContent = this.score;
         }
 
         // 更新完成的祝賀詞列表
         const completedWordsList = resultElement.querySelector('#completedWordsList');
         if (completedWordsList) {
-            completedWordsList.innerHTML = this.completedGreetings.map(greeting => `
-                <tr>
-                    <td>${greeting}</td>
-                </tr>
-            `).join('');
+        completedWordsList.innerHTML = this.completedGreetings.map(greeting => `
+            <tr>
+                <td>${greeting}</td>
+            </tr>
+        `).join('');
         }
 
         // 更新統計數據
@@ -1558,13 +1545,13 @@ class SnakeGame {
         // 更新獎勵列表
         if (stats.bonusesList) {
             stats.bonusesList.innerHTML = bonuses.map(bonus => `
-                <div class="bonus-item">
-                    <span>${bonus.text}</span>
-                    <span>+${bonus.points}</span>
-                </div>
-            `).join('');
+            <div class="bonus-item">
+                <span>${bonus.text}</span>
+                <span>+${bonus.points}</span>
+            </div>
+        `).join('');
         }
-
+        
         // 顯示結果界面
         resultElement.classList.remove('hidden');
 
@@ -1685,25 +1672,25 @@ class SnakeGame {
 
     // 新增：處理錯誤收集
     handleWrongCollection() {
-        // 中斷連擊
+            // 中斷連擊
         this.scoreSystem.breakCombo();
-        
-        // 顯示錯誤表情
+            
+            // 顯示錯誤表情
         if (this.effects) {
             this.effects.showEmoji('wrong', this.snake[0].x, this.snake[0].y);
         }
-        
-        // 添加懲罰效果
-        this.isPenalized = true;
+            
+            // 添加懲罰效果
+            this.isPenalized = true;
         this.isTransparent = true;
         
         // 添加閃爍效果
         document.querySelector('.game-container').classList.add('transparent-state');
         
         // 1秒後解除移動懲罰
-        setTimeout(() => {
-            this.isPenalized = false;
-        }, this.penaltyDuration);
+            setTimeout(() => {
+                this.isPenalized = false;
+            }, this.penaltyDuration);
         
         // 3秒後解除透明狀態
         setTimeout(() => {

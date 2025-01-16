@@ -14,10 +14,9 @@ export class ConfettiSystem {
             spread: 10,              // 很小的散布範圍
             startVelocity: 0,        // 初始速度為 0
             gravity: 0.4,            // 較輕的重力
-            scalar: 1.2,             // 紙碎大小
             drift: 0,                // 不要有橫向漂移
             ticks: 1000,             // 較長的存在時間
-            colors: ['#ff0000', '#ffd700'],  // 紅色和金色
+            colors: ['#ff0000', '#ffd700', '#ffff00'],  // 紅色、金色和黃色
             shapes: ['square'],      // 方形紙碎
             origin: { 
                 x: Math.random(),    // 隨機的水平位置
@@ -31,6 +30,7 @@ export class ConfettiSystem {
         this.interval = setInterval(() => {
             confetti({
                 ...defaults,
+                scalar: Math.random() * 1.5 + 0.5, // 隨機生成大小 (0.5 到 2.0)
                 origin: { 
                     x: Math.random(),  // 每次都使用新的隨機水平位置
                     y: -0.1

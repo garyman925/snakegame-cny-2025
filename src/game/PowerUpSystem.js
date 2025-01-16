@@ -247,7 +247,7 @@ export class PowerUpSystem {
             if (this.isColliding(headPosition, powerUp)) {
                 // 顯示收集效果
                 if (this.game.effects) {
-                    this.game.effects.showEmoji('star', powerUp.x, powerUp.y);
+                    this.game.effects.showEmoji('powerup', powerUp.x, powerUp.y);
                 }
 
                 // 啟動道具效果
