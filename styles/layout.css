@@ -1,14 +1,10 @@
 /* 布局相關樣式 */
 .game-header {
-    position: fixed;
-    left: 0;
+    position: relative;
     width: 100%;
-    height: 80px;
-    padding: 10px;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    gap: 20px;
     z-index: 2;
 }
 

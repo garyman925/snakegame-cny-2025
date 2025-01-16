@@ -108,13 +108,38 @@ export class PowerUpSystem {
     createNotificationElement() {
         this.powerUpNotification = document.createElement('div');
         this.powerUpNotification.className = 'powerup-notification';
+        // 創建圖示容器
+        this.powerUpIcon = document.createElement('img');
+        this.powerUpIcon.className = 'powerup-icon';
+        this.powerUpText = document.createElement('span');
+        
+        // 添加到通知元素中
+        this.powerUpNotification.appendChild(this.powerUpIcon);
+        this.powerUpNotification.appendChild(this.powerUpText);
         document.body.appendChild(this.powerUpNotification);
     }
 
     showNotification(text, duration) {
         if (!this.powerUpNotification) return;
         
-        this.powerUpNotification.textContent = text;
+        // 設置文字
+        this.powerUpText.textContent = text;
+        
+        // 移除所有道具相關的 class
+        this.powerUpNotification.classList.remove('speedup-powerup', 'invincible-powerup', 'freeze-powerup');
+        
+        // 根據效果類型設置對應的圖示和背景顏色
+        if (text.includes('時間')) {
+            this.powerUpIcon.src = 'img/tool-timer.png';
+            this.powerUpNotification.classList.add('freeze-powerup');
+        } else if (text.includes('加速')) {
+            this.powerUpIcon.src = 'img/tool-flash.png';
+            this.powerUpNotification.classList.add('speedup-powerup');
+        } else if (text.includes('無敵')) {
+            this.powerUpIcon.src = 'img/tool-star.png';
+            this.powerUpNotification.classList.add('invincible-powerup');
+        }
+        
         this.powerUpNotification.classList.add('active');
 
         setTimeout(() => {

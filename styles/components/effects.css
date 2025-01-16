@@ -153,23 +153,40 @@
 
 .powerup-notification {
     position: fixed;
-    top: -50px; /* 初始位置在畫面外 */
+    top: -50px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 10px 20px;
-    border-radius: 20px;
+    background: rgb(5 45 255 / 80%);
+    color: #ffffff;
+    padding: 6px 25px;
+    border-radius: 10px;
     font-size: 1.2rem;
-    font-weight: bold;
+    font-weight: normal;
     z-index: 1000;
     transition: top 0.3s ease-in-out;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    gap: 10px;
     pointer-events: none;
 }
 
+/* 加速道具不同 */
+
+.powerup-notification.speedup-powerup {
+    background: #fffa35;
+    color: #171515;
+}
+.powerup-notification.invincible-powerup {
+    background: #a544c4;
+    color: #ffffff;
+}
+.powerup-notification.freeze-powerup {
+    background: #2499ee;
+    color: #ffffff;
+}
+
 .powerup-notification.active {
-    top: 20px; /* 滑入到畫面上方 */
+    top: 20px;
 }
 
 @keyframes slideDown {
@@ -280,4 +297,10 @@
     to {
         background: rgba(128, 128, 128, 0.2);
     }
+}
+
+.powerup-notification .powerup-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
 } 

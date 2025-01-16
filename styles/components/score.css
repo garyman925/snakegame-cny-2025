@@ -2,17 +2,14 @@
 .score-container {
     display: flex;
     flex-direction: column;
-    line-height: 30px;
     text-align: center;
     position: relative;
-    top: 0;
     margin: auto;
 }
 
 .score-label {
     font-size: 1.2em;
     color: #ff6600;
-    margin-bottom: 1em;
 }
 
 .current-score {
@@ -22,6 +19,7 @@
     color: #ff6600;
     position: relative;
     display: inline-block;
+    line-height: .7;
 }
 
 .score-value {
