@@ -5,6 +5,9 @@ export class ComboSystem {
         this.maxCombo = 0;
         this.lastCollectTime = 0;
         this.comboTimeWindow = 2000; // 2秒內收集可以保持連擊
+        
+        // 添加倍率設置
+        this.comboMultiplier = 1.3;  // 從 ScoreSystem 移過來的倍率設置
     }
 
     // 增加連擊數
@@ -39,8 +42,15 @@ export class ComboSystem {
                 document.querySelector('.game-container').appendChild(comboDisplay);
             }
 
-            // 更新文字
-            comboDisplay.textContent = `COMBO x${this.combo}`;
+            // 計算當前倍率
+            const multiplier = Math.pow(this.comboMultiplier, this.combo);
+
+            // 更新文字，加入倍率顯示
+            comboDisplay.innerHTML = `
+                <div class="combo-text">COMBO</div>
+                <div class="combo-number">x${this.combo}</div>
+                <div class="multiplier">${multiplier.toFixed(1)}倍</div>
+            `;
             
             // 重置動畫
             comboDisplay.classList.remove('active');
@@ -100,5 +110,10 @@ export class ComboSystem {
         this.comboDisplay.addEventListener('animationend', () => {
             this.comboDisplay.classList.remove('active');
         }, { once: true });
+    }
+
+    // 獲取當前倍率
+    getCurrentMultiplier() {
+        return Math.pow(this.comboMultiplier, this.combo);
     }
 } 

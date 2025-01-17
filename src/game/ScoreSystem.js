@@ -10,7 +10,6 @@ export class ScoreSystem {
         this.scoreConfig = {
             base: 1,
             completion: 10,
-            comboMultiplier: 0.5,
             orderMultiplier: 0.3,
             speedIncrease: 0.01,
             timeBonus: {
@@ -35,11 +34,11 @@ export class ScoreSystem {
         let score = this.scoreConfig.base;
         let bonusText = '';
 
-        // 計算連擊加成
-        if (this.combo > 0) {
-            const comboBonus = score * (this.combo * this.scoreConfig.comboMultiplier);
-            score += comboBonus;
-            bonusText += `連擊 x${this.combo}`;
+        // 使用 ComboSystem 的倍率
+        if (this.game.comboSystem && this.game.comboSystem.combo > 0) {
+            const multiplier = this.game.comboSystem.getCurrentMultiplier();
+            score *= multiplier;
+            bonusText += `連擊 x${this.game.comboSystem.combo}`;
         }
 
         // 順序加成
@@ -49,7 +48,11 @@ export class ScoreSystem {
             bonusText += bonusText ? '\n順序加成!' : '順序加成!';
         }
 
-        return { score: Math.round(score), bonusText };
+        // 四捨五入最終分數
+        return { 
+            score: Math.round(score), 
+            bonusText 
+        };
     }
 
     updateScore(score, x, y, bonusText) {
@@ -79,18 +82,20 @@ export class ScoreSystem {
                 const bgmRate = Math.min(1.0 + (this.combo - 1) * 0.1, 1.5);
                 this.game.bgm.rate(bgmRate);
             }
-
-            // 顯示 Combo Time 提示
-            this.showComboIndicator();
         }
     }
 
     showComboEffect(x, y) {
         const comboDisplay = document.createElement('div');
         comboDisplay.className = 'combo-display';
+        
+        // 計算當前倍率
+        const multiplier = Math.pow(this.scoreConfig.comboMultiplier, this.combo);
+        
         comboDisplay.innerHTML = `
             <span class="combo-text">連擊</span>
             <span class="combo-number">x${this.combo}</span>
+            <span class="multiplier">${multiplier.toFixed(1)}倍</span>
         `;
 
         comboDisplay.style.cssText = `
@@ -106,27 +111,6 @@ export class ScoreSystem {
             comboDisplay.style.animation = 'comboDisappear 0.2s ease forwards';
             setTimeout(() => comboDisplay.remove(), 200);
         }, 800);
-    }
-
-    showComboIndicator() {
-        if (!this.comboIndicator) {
-            this.comboIndicator = document.createElement('div');
-            this.comboIndicator.className = 'combo-indicator';
-            
-            this.comboIndicator.innerHTML = `
-                <span class="combo-text">COMBO TIME!</span>
-                <span class="combo-count">x${this.combo}</span>
-            `;
-            
-            document.querySelector('.score-container').appendChild(this.comboIndicator);
-        } else {
-            // 更新連擊數字
-            const comboCount = this.comboIndicator.querySelector('.combo-count');
-            if (comboCount) {
-                comboCount.textContent = `x${this.combo}`;
-            }
-        }
-        this.comboIndicator.classList.add('active');
     }
 
     breakCombo() {

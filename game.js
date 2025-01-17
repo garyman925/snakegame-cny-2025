@@ -923,10 +923,14 @@ class SnakeGame {
 
     // 修改使用計分系統的方法
     handleCorrectCollection(index, isCorrectOrder) {
+        // 使用 ScoreSystem 計算分數
         const { score, bonusText } = this.scoreSystem.calculateScore(index, isCorrectOrder);
-        // 傳遞蛇頭位置給計分系統
-        const head = this.snake[0];
-        this.scoreSystem.updateScore(score, head.x, head.y, bonusText);
+        
+        // 更新分數並顯示效果
+        this.scoreSystem.updateScore(score, this.snake[0].x, this.snake[0].y, bonusText);
+        
+        // 增加連擊
+        this.scoreSystem.increaseCombo();
     }
 
     breakCombo() {
@@ -1295,7 +1299,7 @@ class SnakeGame {
                     this.comboSystem.increaseCombo();
                 }
 
-                // 計算分數
+                // 計算分數 - 修改這部分
                 this.handleCorrectCollection(index, this.collectWordSystem.isCorrectOrder(index));
 
                 // 使用 CollectWordSystem 收集文字
@@ -1645,7 +1649,7 @@ class SnakeGame {
     // 新增：處理錯誤收集
     handleWrongCollection() {
             // 中斷連擊
-        this.scoreSystem.breakCombo();
+        this.scoreSystem.breakCombo();  // 使用 scoreSystem 而不是 comboSystem
             
             // 顯示錯誤表情
         if (this.effects) {
