@@ -117,17 +117,6 @@ import('./src/game/ComboSystem.js')
         console.error('無法載入 ComboSystem 模組:', err);
     });
 
-// 引入 DrawFoodSystem
-let DrawFoodSystem;
-import('./src/game/DrawFoodSystem.js')
-    .then(module => {
-        DrawFoodSystem = module.DrawFoodSystem;
-        console.log('DrawFoodSystem 模組已成功載入');
-    })
-    .catch(err => {
-        console.error('無法載入 DrawFoodSystem 模組:', err);
-    });
-
 // 引入 TimerSystem
 let TimerSystem;
 import('./src/game/TimerSystem.js')
@@ -150,12 +139,14 @@ import('./src/game/GameResultSystem.js')
         console.error('無法載入 GameResult 模組:', err);
     });
 
+import { CollectWordSystem } from './src/game/CollectWordSystem.js';
+import { SpawnFoodSystem } from './src/game/SpawnFoodSystem.js';
+
 class SnakeGame {
     constructor() {
         // 首先初始化基本屬性
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        
         
         // 檢測是否為移動設備
         this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -164,16 +155,19 @@ class SnakeGame {
         this.setupCanvasSize();
         
         // 根據設備類型設置大小
-        this.pixelSize = this.isMobile ? 30 : 50; // 移動設備縮小到 30px
-        
-        // 初始化蛇的起始位置（根據新的 pixelSize）
+        this.pixelSize = this.isMobile ? 30 : 50;
+
+        // 初始化蛇的位置
         this.snake = [
             {x: this.pixelSize * 2, y: this.pixelSize},
             {x: this.pixelSize, y: this.pixelSize},
             {x: 0, y: this.pixelSize}
         ];
+
+        // 初始化 SpawnFoodSystem（移到這裡）
+        this.spawnFoodSystem = new SpawnFoodSystem(this);
         
-        // 移除圖片相關的初始化
+        // 然後再設置事件監聽和其他初始化
         this.resizeCanvas();
         window.addEventListener('resize', () => this.resizeCanvas());
         this.setupEventListeners();
@@ -184,12 +178,8 @@ class SnakeGame {
         this.words = ['龍', '馬', '精', '神'];
         this.currentWordIndex = 0;
         this.score = 0;
-        this.food = null;
         this.gameLoop = null;
         this.isGameOver = true;
-
-        this.numberOfDecoys = 3;
-        this.decoyFoods = [];
 
         // 添加結果顯示相關的屬性
         this.resultElement = document.getElementById('gameResult');
@@ -264,13 +254,6 @@ class SnakeGame {
         
         // 修改遊戲循環的間隔時間，使動畫更流暢
         this.frameInterval = 1000/60; // 60fps 改為 30fps
-
-        // 初始化食物相關屬性
-        this.food = null;
-        this.correctFoods = [];  // 保留這行
-        this.decoyFoods = [];    // 保留這行
-
-
 
         // 添加懲罰相關屬性
         this.isPenalized = false;
@@ -447,20 +430,6 @@ class SnakeGame {
                 }
             }),
             new Promise(resolve => {
-                if (DrawFoodSystem) {
-                    this.drawFoodSystem = new DrawFoodSystem(this);
-                    resolve();
-                } else {
-                    const checkInterval = setInterval(() => {
-                        if (DrawFoodSystem) {
-                            this.drawFoodSystem = new DrawFoodSystem(this);
-                            clearInterval(checkInterval);
-                            resolve();
-                        }
-                    }, 100);
-                }
-            }),
-            new Promise(resolve => {
                 if (ComboSystem) {
                     this.comboSystem = new ComboSystem(this);
                     resolve();
@@ -564,6 +533,11 @@ class SnakeGame {
 
         // 設置初始速度倍率
         this.speedMultiplier = 1.0;
+
+        // 初始化 CollectWordSystem
+        if (CollectWordSystem) {
+            this.collectWordSystem = new CollectWordSystem(this);
+        }
     }
 
     initConfettiSystem() {
@@ -681,11 +655,10 @@ class SnakeGame {
     selectNextGreeting(isInitial = false) {
         // 只有在不是初始化時才播放音效
         if (!isInitial && this.audio) {
-            // 連續播放兩次 crash 音效
             this.audio.playSound('crash');
             setTimeout(() => {
                 this.audio.playSound('crash');
-            }, 200);  // 200毫秒後播放第二次
+            }, 200);
         }
 
         const collectedWords = document.querySelector('.collected-words');
@@ -693,52 +666,28 @@ class SnakeGame {
         
         // 更新當前詞組和錯誤詞組
         const greeting = this.greetingsData[this.currentGreetingIndex];
-        this.words = greeting.words;
-        this.currentWords = [...greeting.words];
         this.wrongWords = greeting.wrong_words || [];
-        this.currentWordIndex = 0;
+        
+        // 使用 CollectWordSystem 設置新的詞組
+        this.collectWordSystem.setNewWords(greeting.words);
+        // 保存當前詞組的引用，用於食物生成
+        this.currentWords = greeting.words;  // 添加這行
         
         // 重新設置畫布大小
         this.setupCanvasSize();
         
-        // 等待一小段時間確保畫布尺寸已更新
+        // 生成新的食物
+        if (!isInitial) {
+            this.spawnFoodSystem.spawnFood();
+        }
+        
         setTimeout(() => {
-            // 清空所有已收集的字
-            this.collectedWordsElements.forEach(element => {
-                const span = element.querySelector('span');
-                if (span) {
-                    span.textContent = '';
-                }
-                element.classList.remove('active', 'bounce');
-            });
-
-            // 更新提示文字
-            this.collectedWordsElements.forEach((element, index) => {
-                const oldHint = element.querySelector('.hint');
-                if (oldHint) {
-                    oldHint.remove();
-                }
-                
-                const hint = document.createElement('div');
-                hint.className = 'hint';
-                hint.textContent = this.currentWords[index];
-                element.appendChild(hint);
-                element.classList.remove('active');
-            });
-
-            // 生成新食物
-            if (!isInitial) {
-                // 確保在生成食物前重新計算尺寸
-                this.setupCanvasSize();
-                this.spawnFood();
-            }
-
             collectedWords.classList.remove('changing');
         }, 500);
 
         if (isInitial) {
             this.setupCanvasSize();
-            this.spawnFood();
+            this.spawnFoodSystem.spawnFood();  // 確保初始化時也生成食物
         }
 
         // 重置道具系統的計數
@@ -747,177 +696,181 @@ class SnakeGame {
         }
     }
 
-    spawnFood() {
-        // 確保 drawFoodSystem 已經初始化
-        if (!this.drawFoodSystem) {
-            console.warn('DrawFoodSystem 尚未初始化');
-            return;
-        }
+    // spawnFood() {
+    //     // 確保 drawFoodSystem 已經初始化
+    //     if (!this.drawFoodSystem) {
+    //         console.warn('DrawFoodSystem 尚未初始化');
+    //         return;
+    //     }
 
-        // 清除現有的食物
-        this.correctFoods = [];  // 修改這行
-        this.decoyFoods = [];    // 修改這行
+    //     // 清除現有的食物
+    //     this.correctFoods = [];  // 修改這行
+    //     this.decoyFoods = [];    // 修改這行
 
-        // 重新設置畫布大小以確保尺寸正確
-        this.setupCanvasSize();
+    //     // 重新設置畫布大小以確保尺寸正確
+    //     this.setupCanvasSize();
 
-        // 設置安全邊距，根據螢幕大小調整
-        const margin = this.isMobile ? this.pixelSize : this.pixelSize * 2; // 減少移動設備的邊距
-        const bottomMargin = this.isMobile ? 
-            (window.innerHeight <= 667 ? 180 : 150) : margin; // 稍微減少底部邊距
-        const minFoodDistance = this.isMobile ? 
-            this.pixelSize * 2.5 : // 減少移動設備上食物之間的最小距離
-            this.pixelSize * 4;    // 桌面版保持原來的距離
+    //     // 設置安全邊距，根據螢幕大小調整
+    //     const margin = this.isMobile ? this.pixelSize : this.pixelSize * 2; // 減少移動設備的邊距
+    //     const bottomMargin = this.isMobile ? 
+    //         (window.innerHeight <= 667 ? 180 : 150) : margin; // 稍微減少底部邊距
+    //     const minFoodDistance = this.isMobile ? 
+    //         this.pixelSize * 2.5 : // 減少移動設備上食物之間的最小距離
+    //         this.pixelSize * 4;    // 桌面版保持原來的距離
         
-        // 獲取 game-header 的實際高度
-        const header = document.querySelector('.game-header');
-        const headerHeight = header.getBoundingClientRect().height + 20;
+    //     // 獲取 game-header 的實際高度
+    //     const header = document.querySelector('.game-header');
+    //     const headerHeight = header.getBoundingClientRect().height + 20;
 
-        // 計算可用區域（確保使用最新的畫布尺寸）
-        const availableWidth = this.canvas.width - margin * 2;
-        const availableHeight = this.canvas.height - headerHeight - bottomMargin - margin;
-        const startY = headerHeight + margin;
+    //     // 計算可用區域（確保使用最新的畫布尺寸）
+    //     const availableWidth = this.canvas.width - margin * 2;
+    //     const availableHeight = this.canvas.height - headerHeight - bottomMargin - margin;
+    //     const startY = headerHeight + margin;
 
-        // 針對小螢幕設備的額外安全檢查
-        const isSmallScreen = window.innerHeight <= 667;
-        const safeHeight = isSmallScreen ? 
-            this.canvas.height - 180 : // 減少安全高度限制
-            this.canvas.height - bottomMargin;
+    //     // 針對小螢幕設備的額外安全檢查
+    //     const isSmallScreen = window.innerHeight <= 667;
+    //     const safeHeight = isSmallScreen ? 
+    //         this.canvas.height - 180 : // 減少安全高度限制
+    //         this.canvas.height - bottomMargin;
 
-        // 檢查並輸出計算的區域
-        console.log('Available area:', {
-            width: availableWidth,
-            height: availableHeight,
-            startY: startY,
-            canvasWidth: this.canvas.width,
-            canvasHeight: this.canvas.height
-        });
+    //     // 檢查並輸出計算的區域
+    //     console.log('Available area:', {
+    //         width: availableWidth,
+    //         height: availableHeight,
+    //         startY: startY,
+    //         canvasWidth: this.canvas.width,
+    //         canvasHeight: this.canvas.height
+    //     });
 
-        // 用於存儲所有已放置的食物位置
-        const placedFoods = [];
+    //     // 用於存儲所有已放置的食物位置
+    //     const placedFoods = [];
 
-        // 為每個正確字生成食物
-        for (const word of this.currentWords) {
-            let x, y;
-            let validPosition = false;
-            let attempts = 0;
-            const maxAttempts = 100;
+    //     // 使用 CollectWordSystem 中的當前詞組生成食物
+    //     const wordsToSpawn = this.currentWords;  // 使用保存的當前詞組
+        
+    //     // 為每個正確字生成食物
+    //     for (let i = 0; i < wordsToSpawn.length; i++) {
+    //         const word = wordsToSpawn[i];
+    //         let x, y;
+    //         let validPosition = false;
+    //         let attempts = 0;
+    //         const maxAttempts = 100;
 
-            while (!validPosition && attempts < maxAttempts) {
-                x = Math.floor(Math.random() * availableWidth + margin);
-                y = Math.floor(Math.random() * availableHeight + startY);
+    //         while (!validPosition && attempts < maxAttempts) {
+    //             x = Math.floor(Math.random() * availableWidth + margin);
+    //             y = Math.floor(Math.random() * availableHeight + startY);
                 
-                // 確保 y 不會太接近底部，針對小螢幕特別處理
-                if (y > safeHeight) {
-                    continue;
-                }
+    //             // 確保 y 不會太接近底部，針對小螢幕特別處理
+    //             if (y > safeHeight) {
+    //                 continue;
+    //             }
 
-                validPosition = true;
-                attempts++;
+    //             validPosition = true;
+    //             attempts++;
 
-                // 檢查與已放置食物的距離
-                for (const food of placedFoods) {
-                    const distance = Math.sqrt(
-                        Math.pow(x - food.x, 2) + 
-                        Math.pow(y - food.y, 2)
-                    );
-                    if (distance < minFoodDistance) {
-                        validPosition = false;
-                        break;
-                    }
-                }
+    //             // 檢查與已放置食物的距離
+    //             for (const food of placedFoods) {
+    //                 const distance = Math.sqrt(
+    //                     Math.pow(x - food.x, 2) + 
+    //                     Math.pow(y - food.y, 2)
+    //                 );
+    //                 if (distance < minFoodDistance) {
+    //                     validPosition = false;
+    //                     break;
+    //                 }
+    //             }
 
-                // 檢查與蛇的距離
-                for (const segment of this.snake) {
-                    const distance = Math.sqrt(
-                        Math.pow(x - segment.x, 2) + 
-                        Math.pow(y - segment.y, 2)
-                    );
-                    if (distance < minFoodDistance) {
-                        validPosition = false;
-                        break;
-                    }
-                }
-            }
+    //             // 檢查與蛇的距離
+    //             for (const segment of this.snake) {
+    //                 const distance = Math.sqrt(
+    //                     Math.pow(x - segment.x, 2) + 
+    //                     Math.pow(y - segment.y, 2)
+    //                 );
+    //                 if (distance < minFoodDistance) {
+    //                     validPosition = false;
+    //                     break;
+    //                 }
+    //             }
+    //         }
 
-            if (validPosition) {
-                const food = {
-                    x: x,
-                    y: y,
-                    word: word,
-                    collected: false,
-                    size: this.isMobile ? this.pixelSize * 0.8 : this.pixelSize
-                };
-                this.correctFoods.push(food);  // 保留這行
-                placedFoods.push(food);
-            }
-        }
+    //         if (validPosition) {
+    //             const food = {
+    //                 x: x,
+    //                 y: y,
+    //                 word: word,
+    //                 collected: false,
+    //                 size: this.isMobile ? this.pixelSize * 0.8 : this.pixelSize
+    //             };
+    //             this.correctFoods.push(food);  // 保留這行
+    //             placedFoods.push(food);
+    //         }
+    //     }
 
-        // 生成誘餌食物
-        for (let i = 0; i < this.numberOfDecoys; i++) {
-            let x, y;
-            let validPosition = false;
-            let attempts = 0;
-            const maxAttempts = 100;
+    //     // 生成誘餌食物
+    //     for (let i = 0; i < this.numberOfDecoys; i++) {
+    //         let x, y;
+    //         let validPosition = false;
+    //         let attempts = 0;
+    //         const maxAttempts = 100;
 
-            while (!validPosition && attempts < maxAttempts) {
-                x = Math.floor(Math.random() * availableWidth + margin);
-                y = Math.floor(Math.random() * availableHeight + startY);
+    //         while (!validPosition && attempts < maxAttempts) {
+    //             x = Math.floor(Math.random() * availableWidth + margin);
+    //             y = Math.floor(Math.random() * availableHeight + startY);
                 
-                // 確保 y 不會太接近底部，針對小螢幕特別處理
-                if (y > safeHeight) {
-                    continue;
-                }
+    //             // 確保 y 不會太接近底部，針對小螢幕特別處理
+    //             if (y > safeHeight) {
+    //                 continue;
+    //             }
 
-                validPosition = true;
-                attempts++;
+    //             validPosition = true;
+    //             attempts++;
 
-                // 檢查與所有已放置食物的距離
-                for (const food of placedFoods) {
-                    const distance = Math.sqrt(
-                        Math.pow(x - food.x, 2) + 
-                        Math.pow(y - food.y, 2)
-                    );
-                    if (distance < minFoodDistance) {
-                        validPosition = false;
-                        break;
-                    }
-                }
+    //             // 檢查與所有已放置食物的距離
+    //             for (const food of placedFoods) {
+    //                 const distance = Math.sqrt(
+    //                     Math.pow(x - food.x, 2) + 
+    //                     Math.pow(y - food.y, 2)
+    //                 );
+    //                 if (distance < minFoodDistance) {
+    //                     validPosition = false;
+    //                     break;
+    //                 }
+    //             }
 
-                // 檢查與蛇的距離
-                for (const segment of this.snake) {
-                    const distance = Math.sqrt(
-                        Math.pow(x - segment.x, 2) + 
-                        Math.pow(y - segment.y, 2)
-                    );
-                    if (distance < minFoodDistance) {
-                        validPosition = false;
-                        break;
-                    }
-                }
-            }
+    //             // 檢查與蛇的距離
+    //             for (const segment of this.snake) {
+    //                 const distance = Math.sqrt(
+    //                     Math.pow(x - segment.x, 2) + 
+    //                     Math.pow(y - segment.y, 2)
+    //                 );
+    //                 if (distance < minFoodDistance) {
+    //                     validPosition = false;
+    //                     break;
+    //                 }
+    //             }
+    //         }
 
-            if (validPosition) {
-                const food = {
-                    x: x,
-                    y: y,
-                    word: this.getRandomWord(),
-                    size: this.isMobile ? this.pixelSize * 0.8 : this.pixelSize
-                };
-                this.decoyFoods.push(food);  // 保留這行
-                placedFoods.push(food);
-            }
-        }
+    //         if (validPosition) {
+    //             const food = {
+    //                 x: x,
+    //                 y: y,
+    //                 word: this.getRandomWord(),
+    //                 size: this.isMobile ? this.pixelSize * 0.8 : this.pixelSize
+    //             };
+    //             this.decoyFoods.push(food);  // 保留這行
+    //             placedFoods.push(food);
+    //         }
+    //     }
 
-        // 初始化食物動畫
-        this.correctFoods.forEach(food => {
-            this.drawFoodSystem.addFoodAnimation(food);
-        });
+    //     // 初始化食物動畫
+    //     this.correctFoods.forEach(food => {
+    //         this.drawFoodSystem.addFoodAnimation(food);
+    //     });
 
-        this.decoyFoods.forEach(food => {
-            this.drawFoodSystem.addDecoyAnimation(food);
-        });
-    }
+    //     this.decoyFoods.forEach(food => {
+    //         this.drawFoodSystem.addDecoyAnimation(food);
+    //     });
+    // }
 
     // 添加檢查位置是否重疊的方法
     isPositionOverlapping(x, y, positions) {
@@ -1052,22 +1005,24 @@ class SnakeGame {
             }
         }
 
-        // 確保 correctFoods 存在且 drawFoodSystem 已初始化
-        if (this.correctFoods && this.correctFoods.length > 0 && this.drawFoodSystem) {
-            this.correctFoods.forEach((food, index) => {
-                if (!food.collected) {
-                    this.drawFoodSystem.drawCorrectFood(food, this.snake[0]);
-                }
-            });
-        }
+        // 獲取並繪製食物
+        const { correctFoods, decoyFoods } = this.spawnFoodSystem.getAllFoods();
 
-        // 確保 decoyFoods 存在且 drawFoodSystem 已初始化
-        if (this.decoyFoods && this.decoyFoods.length > 0 && this.drawFoodSystem) {
-            this.decoyFoods.forEach((decoy, index) => {
-                this.drawFoodSystem.drawDecoy(decoy, this.snake[0]);
-            });
-        }
+        // 繪製正確食物
+        // if (correctFoods && correctFoods.length > 0) {  // 移除 drawFoodSystem 的檢查
+        //     correctFoods.forEach(food => {
+        //         if (!food.collected) {
+        //             this.drawFoodWithAnimation(food, null, this.snake[0]);
+        //         }
+        //     });
+        // }
 
+        // 繪製誘餌食物
+        // if (decoyFoods && decoyFoods.length > 0) {  // 移除 drawFoodSystem 的檢查
+        //     decoyFoods.forEach(decoy => {
+        //         this.drawFoodWithAnimation(decoy, null, this.snake[0]);
+        //     });
+        // }
 
         // 繪製道具
         if (this.powerUpSystem) {
@@ -1078,71 +1033,71 @@ class SnakeGame {
             this.updateDebugInfo();
         }
 
-        // 確保 drawFoodSystem 存在且已初始化
-        if (this.drawFoodSystem) {
-            this.drawFoodSystem.drawFood();
+        // 只保留 SpawnFoodSystem 的繪製
+        if (this.spawnFoodSystem) {
+            this.spawnFoodSystem.draw();
         }
     }
 
     // 修改：帶動畫效果的食物繪製方法
-    drawFoodWithAnimation(food, animation, snakeHead) {
-        // 確保 animation 存在
-        if (!animation) {
-            animation = {
-                rotation: 0,
-                isAnimating: false
-            };
-        }
+    // drawFoodWithAnimation(food, animation, snakeHead) {
+    //     // 確保 animation 存在
+    //     if (!animation) {
+    //         animation = {
+    //             rotation: 0,
+    //             isAnimating: false
+    //         };
+    //     }
 
-        // 檢查與蛇頭的距離
-        const dx = snakeHead.x - food.x;
-        const dy = snakeHead.y - food.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+    //     // 檢查與蛇頭的距離
+    //     const dx = snakeHead.x - food.x;
+    //     const dy = snakeHead.y - food.y;
+    //     const distance = Math.sqrt(dx * dx + dy * dy);
 
-        // 更新動畫狀態
-        if (distance < this.foodAnimationDistance) {
-            animation.isAnimating = true;
-            animation.rotation = Math.sin(Date.now() * 0.01) * 0.2;
-        } else {
-            animation.isAnimating = false;
-            animation.rotation = 0;
-        }
+    //     // 更新動畫狀態
+    //     if (distance < this.foodAnimationDistance) {
+    //         animation.isAnimating = true;
+    //         animation.rotation = Math.sin(Date.now() * 0.01) * 0.2;
+    //     } else {
+    //         animation.isAnimating = false;
+    //         animation.rotation = 0;
+    //     }
 
-        // 繪製圓形背景
-        this.ctx.save();
-        this.ctx.translate(
-            food.x + this.pixelSize/2,
-            food.y + this.pixelSize/2
-        );
-        this.ctx.rotate(animation.rotation);
+    //     // 繪製圓形背景
+    //     this.ctx.save();
+    //     this.ctx.translate(
+    //         food.x + this.pixelSize/2,
+    //         food.y + this.pixelSize/2
+    //     );
+    //     this.ctx.rotate(animation.rotation);
         
-        // 繪製圓形
-        this.ctx.beginPath();
-        this.ctx.arc(0, 0, this.pixelSize * 0.75, 0, Math.PI * 2);
-        this.ctx.fillStyle = 'red';
-        this.ctx.fill();
-        this.ctx.closePath();
+    //     // 繪製圓形
+    //     this.ctx.beginPath();
+    //     this.ctx.arc(0, 0, this.pixelSize * 0.75, 0, Math.PI * 2);
+    //     this.ctx.fillStyle = 'red';
+    //     this.ctx.fill();
+    //     this.ctx.closePath();
         
-        this.ctx.restore();
+    //     this.ctx.restore();
 
-        // 繪製文字
-        this.ctx.save();
-        this.ctx.translate(
-            food.x + this.pixelSize/2,
-            food.y + this.pixelSize/2
-        );
-        this.ctx.rotate(animation.rotation);
-        this.ctx.fillStyle = '#fff';
+    //     // 繪製文字
+    //     this.ctx.save();
+    //     this.ctx.translate(
+    //         food.x + this.pixelSize/2,
+    //         food.y + this.pixelSize/2
+    //     );
+    //     this.ctx.rotate(animation.rotation);
+    //     this.ctx.fillStyle = '#fff';
         
-        // 根據設備類型設置不同的字體大小
-        const fontSize = this.isMobile ? '25px' : '45px';
-        this.ctx.font = `900 ${fontSize} "Noto Sans TC"`;
+    //     // 根據設備類型設置不同的字體大小
+    //     const fontSize = this.isMobile ? '25px' : '45px';
+    //     this.ctx.font = `900 ${fontSize} "Noto Sans TC"`;
         
-        this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'middle';
-        this.ctx.fillText(food.word, 0, 0);
-        this.ctx.restore();
-    }
+    //     this.ctx.textAlign = 'center';
+    //     this.ctx.textBaseline = 'middle';
+    //     this.ctx.fillText(food.word, 0, 0);
+    //     this.ctx.restore();
+    // }
 
     move() {
         if (this.isPenalized) return;
@@ -1276,8 +1231,10 @@ class SnakeGame {
             height: this.pixelSize
         };
 
+        const { correctFoods, decoyFoods } = this.spawnFoodSystem.getAllFoods();
+
         // 檢查正確食物碰撞
-        this.correctFoods.forEach((food, index) => {
+        correctFoods.forEach((food, index) => {
             if (food.collected) return;
 
             const foodRect = {
@@ -1295,34 +1252,34 @@ class SnakeGame {
                     this.effects.showEmoji('correct', headPosition.x, headPosition.y);
                 }
 
-                // 確保 comboSystem 已初始化
+                // 更新連擊系統
                 if (this.comboSystem) {
                     this.comboSystem.increaseCombo();
                 }
 
                 // 計算分數
-                this.handleCorrectCollection(index, index === this.currentWordIndex);
+                this.handleCorrectCollection(index, this.collectWordSystem.isCorrectOrder(index));
 
-                // 視覺效果
-                this.showCollectedWord(food.word, index);
+                // 使用 CollectWordSystem 收集文字
+                this.collectWordSystem.collectWord(food.word, index);
                 this.triggerGlowEffect();
 
                 // 讓蛇變長
                 this.growSnake();
 
                 // 檢查是否完成詞組
-                if (this.correctFoods.every(f => f.collected)) {
+                if (this.collectWordSystem.isCurrentWordComplete()) {
                     // 添加完成獎勵
                     const completionScore = this.scoreConfig.completion;
-                    this.handleCorrectCollection(index, index === this.currentWordIndex);
+                    this.handleCorrectCollection(index, this.collectWordSystem.isCorrectOrder(index));
                     
                     // 播放完成時的紙碎動畫
                     if (this.confettiSystem) {
                         this.confettiSystem.celebrate();
                     }
                     
-                    this.completedGreetings.push(this.currentWords.join(''));
-                    this.showCompletionAnimation(this.currentWords);
+                    this.collectWordSystem.completedGreetings.push(this.currentWords.join(''));
+                    this.collectWordSystem.showCompletionAnimation(this.currentWords);
                     
                     this.currentGreetingIndex++;
                     
@@ -1337,7 +1294,7 @@ class SnakeGame {
         });
 
         // 檢查誘餌食物碰撞
-        this.decoyFoods.forEach((decoy, index) => {
+        decoyFoods.forEach((decoy, index) => {
             const decoyRect = {
                 x: decoy.x,
                 y: decoy.y,
@@ -1386,51 +1343,6 @@ class SnakeGame {
                 }
             }
         });
-    }
-
-    // 新增：只生成正確答案的食物位置
-    spawnCorrectFood() {
-        const margin = this.pixelSize * 2;
-        const maxX = this.canvas.width - margin;
-        const minX = margin;
-        const maxY = this.canvas.height - margin;
-        const minY = margin + 80;
-        
-        const minFoodDistance = this.pixelSize * 4;
-        let x, y;
-        let attempts = 0;
-        const maxAttempts = 100;
-
-        // 收集所有需要避開的位置（包括干擾食物）
-        const usedPositions = this.decoyFoods.map(food => ({x: food.x, y: food.y}));
-
-        do {
-            x = Math.floor(Math.random() * ((maxX - minX) / this.pixelSize)) * this.pixelSize + minX;
-            y = Math.floor(Math.random() * ((maxY - minY) / this.pixelSize)) * this.pixelSize + minY;
-            attempts++;
-            
-            if (attempts > maxAttempts) {
-                console.warn('無法找到合適的食物位置');
-                break;
-            }
-        } while (
-            this.snake.some(segment => 
-                Math.hypot(segment.x - x, segment.y - y) < minFoodDistance
-            ) ||
-            usedPositions.some(pos => 
-                Math.hypot(pos.x - x, pos.y - y) < minFoodDistance
-            )
-        );
-
-        // 只更新正確答案的位置
-        this.food = {
-            x: x,
-            y: y,
-            word: this.currentWords[this.currentWordIndex]
-        };
-
-        // 更新主要食物的動畫狀態
-        this.drawFoodSystem.addFoodAnimation(this.food);
     }
 
     // 修改蛇身碰撞檢測
@@ -1574,73 +1486,6 @@ class SnakeGame {
         document.querySelector('[data-difficulty="NORMAL"]').classList.add('selected');
 
     }
-
-    // 添加顯示結果的方法
-    // showGameResult() {
-    //     const resultElement = document.getElementById('gameResult');
-    //     if (!resultElement) {
-    //         console.error('找不到 gameResult 元素');
-    //         return;
-    //     }
-
-    //     // 設置結束原因
-    //     const reasonElement = resultElement.querySelector('.game-over-reason');
-    //     if (reasonElement) {
-    //         reasonElement.textContent = this.gameOverReason;
-    //     }
-
-    //     // 更新分數
-    //     const scoreDisplay = resultElement.querySelector('.score-value');
-    //     if (scoreDisplay) {
-    //     scoreDisplay.textContent = this.score;
-    //     }
-
-    //     // 更新完成的祝賀詞列表
-    //     const completedWordsList = resultElement.querySelector('#completedWordsList');
-    //     if (completedWordsList) {
-    //     completedWordsList.innerHTML = this.completedGreetings.map(greeting => `
-    //         <tr>
-    //             <td>${greeting}</td>
-    //         </tr>
-    //     `).join('');
-    //     }
-
-    //     // 更新統計數據
-    //     const stats = {
-    //         totalCollected: resultElement.querySelector('#totalCollected'),
-    //         perfectCollects: resultElement.querySelector('#perfectCollects'),
-    //         maxCombo: resultElement.querySelector('#maxCombo'),
-    //         bonusesList: resultElement.querySelector('#bonusesList')
-    //     };
-
-    //     if (stats.totalCollected) stats.totalCollected.textContent = this.stats.totalCollected;
-    //     if (stats.perfectCollects) stats.perfectCollects.textContent = this.stats.perfectCollects;
-    //     if (stats.maxCombo) stats.maxCombo.textContent = this.comboSystem.getMaxCombo();
-
-    //     // 計算最終分數和獎勵
-    //     const { finalScore, bonuses } = this.calculateFinalScore();
-
-    //     // 更新獎勵列表
-    //     if (stats.bonusesList) {
-    //         stats.bonusesList.innerHTML = bonuses.map(bonus => `
-    //         <div class="bonus-item">
-    //             <span>${bonus.text}</span>
-    //             <span>+${bonus.points}</span>
-    //         </div>
-    //     `).join('');
-    //     }
-        
-    //     // 顯示結果界面
-    //     resultElement.classList.remove('hidden');
-
-    //     // 更新排行榜
-    //     this.updateRankingData('score');
-    // }
-
-    // // 隱藏結果
-    // hideGameResult() {
-    //     this.resultElement.classList.add('hidden');
-    // }
 
     // 修改 resizeCanvas 方法
     resizeCanvas() {
