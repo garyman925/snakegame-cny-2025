@@ -456,6 +456,20 @@ class SnakeGame {
                         }
                     }, 100);
                 }
+            }),
+            new Promise(resolve => {
+                if (GameResultSystem) {
+                    this.gameResultSystem = new GameResultSystem(this);
+                    resolve();
+                } else {
+                    const checkInterval = setInterval(() => {
+                        if (GameResultSystem) {
+                            this.gameResultSystem = new GameResultSystem(this);
+                            clearInterval(checkInterval);
+                            resolve();
+                        }
+                    }, 100);
+                }
             })
         ]).then(() => {
             console.log('✅ 所有遊戲系統初始化完成');
@@ -1196,6 +1210,9 @@ class SnakeGame {
         if (this.powerUpSystem) {
             this.powerUpSystem.cleanup();
         }
+        
+        // 顯示 game-intro
+        document.querySelector('.game-intro').classList.remove('hide');
     }
 
     // 添加新方法：獲取插值後的蛇頭位置
@@ -1452,7 +1469,10 @@ class SnakeGame {
         // 隱藏遊戲界面元素
         document.querySelector('.game-container').classList.remove('game-started');
         
-        this.showGameResult();
+        // 使用 GameResultSystem 顯示結果
+        if (this.gameResultSystem) {
+            this.gameResultSystem.showGameResult(this.gameOverReason);
+        }
         
         // 更新排行榜顯示
         this.updateRankingData('score');
@@ -1460,6 +1480,10 @@ class SnakeGame {
 
     setupEventListeners() {
         document.getElementById('startButton').addEventListener('click', () => {
+            // 添加隱藏類
+            document.querySelector('.game-intro').classList.add('hide');
+            
+            // 初始化遊戲
             if (this.gameLoop) {
                 clearInterval(this.gameLoop);
             }
@@ -1468,9 +1492,8 @@ class SnakeGame {
             this.gameLoop = setInterval(() => {
                 this.move();
                 this.draw();
-            }, this.frameInterval); // 使用新的幀間隔
+            }, this.frameInterval);
         });
-
 
         // 添加難度選擇按鈕的事件監聽
         document.querySelectorAll('.difficulty-btn').forEach(btn => {
@@ -2238,49 +2261,47 @@ class SnakeGame {
     // ... 其他方法 ...
 
     // 在 constructor 中添加
-    setupRankingToggle() {
-        const rankingButton = document.querySelector('.ranking-button');
-        const rankingContainer = document.querySelector('.ranking-container');
-        // 修改選擇器以匹配正確的元素
-        const scoreContainer = document.querySelector('.result-container .score-container');
+    // setupRankingToggle() {
+    //     const rankingButton = document.querySelector('.ranking-button');
+    //     const rankingContainer = document.querySelector('result-container .ranking-container');
+    //     const scoreContainer = document.querySelector('.result-container .score-container');
         
-        // 添加調試日誌
-        console.log('Elements found:', {
-            rankingButton,
-            rankingContainer,
-            scoreContainer
-        });
+    //     // 添加調試日誌
+    //     console.log('Elements found:', {
+    //         rankingButton,
+    //         rankingContainer,
+    //         scoreContainer
+    //     });
 
-        if (rankingButton && rankingContainer && scoreContainer) {
-            console.log('All elements found, adding click listener');
+    //     if (rankingButton) {
+    //         console.log('All elements found, adding click listener');
             
-            rankingButton.addEventListener('click', () => {
-
-                if (!rankingContainer.classList.contains('show')) {
-                    console.log('Switching to ranking view');
-                    scoreContainer.classList.add('hide');
+    //         rankingButton.addEventListener('click', () => {
+    //             if (!rankingContainer.classList.contains('show')) {
+    //                 console.log('Switching to ranking view');
+    //                 scoreContainer.classList.add('hide');
   
-                    setTimeout(() => {
-                        rankingContainer.classList.add('show');
-                    }, 300);
-                    rankingButton.textContent = '返回成績';
-                } else {
-                    console.log('Switching to score view');
-                    rankingContainer.classList.remove('show');
-                    setTimeout(() => {
-                        scoreContainer.classList.remove('hide');
-                    }, 300);
-                    rankingButton.textContent = '查看排行榜';
-                }
-            });
-        } else {
-            console.warn('Some elements not found:', {
-                rankingButton: !!rankingButton,
-                rankingContainer: !!rankingContainer,
-                scoreContainer: !!scoreContainer
-            });
-        }
-    }
+    //                 setTimeout(() => {
+    //                     rankingContainer.classList.add('show');
+    //                 }, 300);
+    //                 rankingButton.textContent = '返回成績';
+    //             } else {
+    //                 console.log('Switching to score view');
+    //                 rankingContainer.classList.remove('show');
+    //                 setTimeout(() => {
+    //                     scoreContainer.classList.remove('hide');
+    //                 }, 300);
+    //                 rankingButton.textContent = '查看排行榜';
+    //             }
+    //         });
+    //     } else {
+    //         console.warn('Some elements not found:', {
+    //             rankingButton: !!rankingButton,
+    //             rankingContainer: !!rankingContainer,
+    //             scoreContainer: !!scoreContainer
+    //         });
+    //     }
+    // }
 }
 
 window.onload = () => {

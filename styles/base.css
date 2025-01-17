@@ -7,7 +7,7 @@
 
 body {
     overflow: hidden;
-    background: red url('../img/flower.png');
+    background: #ff3737 url('../img/flower.png');
     font-family: "LXGW WenKai Mono TC", serif;
     font-weight: 400;
     font-style: normal;

@@ -1,14 +1,69 @@
 export class GameResultSystem {
     constructor(game) {
         this.game = game;
-        this.resultElement = document.getElementById('gameResult');
-        
-        // 綁定重新開始按鈕
-        const restartButton = this.resultElement.querySelector('.restart-button');
+        this.resultElement = null;
+        this.setupRankingToggle();  // 在初始化時設置排行榜切換功能
+        this.setupRestartButton();   // 添加重啟按鈕功能
+    }
+
+    setupRestartButton() {
+        const restartButton = document.querySelector('.restart-button');
         if (restartButton) {
             restartButton.addEventListener('click', () => {
                 this.resetGame();
             });
+        }
+    }
+
+    setupRankingToggle() {
+        const rankingButton = document.querySelector('.ranking-button');
+        
+        console.log('設置排行榜切換功能');
+
+        if (rankingButton) {
+            console.log('找到排行榜按鈕，添加點擊事件');
+            
+            rankingButton.addEventListener('click', () => {
+                const rankingContainer = document.querySelector('#gameResult .ranking-container');
+                const scoreContainer = document.querySelector('#gameResult .score-div');
+
+                console.log('DOM結構:', {
+                    gameResult: document.getElementById('gameResult'),
+                    resultContainer: document.querySelector('.result-container'),
+                    scoreElement: document.querySelector('.score-'),
+                    rankingElement: document.querySelector('.ranking-container'),
+                    fullDOM: document.getElementById('gameResult')?.innerHTML
+                });
+
+                if (rankingContainer && scoreContainer) {
+                    if (!rankingContainer.classList.contains('show')) {
+                        console.log('切換到排行榜視圖');
+                        scoreContainer.classList.add('hide');
+    
+                        setTimeout(() => {
+                            rankingContainer.classList.add('show');
+                        }, 300);
+                        rankingButton.textContent = '返回成績';
+                    } else {
+                        console.log('切換到成績視圖');
+                        rankingContainer.classList.remove('show');
+                        setTimeout(() => {
+                            scoreContainer.classList.remove('hide');
+                        }, 300);
+                        rankingButton.textContent = '查看排行榜';
+                    }
+                } else {
+                    console.warn('找不到必要元素:', {
+                        rankingContainer: !!rankingContainer,
+                        scoreContainer: !!scoreContainer,
+                        resultContainer: !!document.querySelector('.result-container'),
+                        scoreClass: document.querySelector('.score-')?.className,
+                        rankingClass: document.querySelector('.ranking-container')?.className
+                    });
+                }
+            });
+        } else {
+            console.warn('找不到排行榜按鈕');
         }
     }
 

@@ -16,7 +16,7 @@ export class ConfettiSystem {
             gravity: 0.4,            // 較輕的重力
             drift: 0,                // 不要有橫向漂移
             ticks: 1000,             // 較長的存在時間
-            colors: ['#ff0000', '#ffd700', '#ffff00'],  // 紅色、金色和黃色
+            colors: ['#ffd700'],  // 紅色、金色和黃色
             shapes: ['square'],      // 方形紙碎
             origin: { 
                 x: Math.random(),    // 隨機的水平位置

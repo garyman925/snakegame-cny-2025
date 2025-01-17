@@ -188,6 +188,7 @@
     display: flex;
     justify-content: center;
     gap: 10px;
+    overflow: auto;
 }
 
 .tab-btn {
@@ -368,15 +369,21 @@
     transform: translateY(0);
 }
 
-.score-container.hide {
+.score-div.hide {
     animation: fadeOut 0.3s ease forwards;
     display: none;
 }
 
 .ranking-container {
     transition: all 0.3s ease;
-    opacity: 0;
+    opacity: 1;
     transform: translateY(20px);
+}
+
+@media screen and (max-width: 768px) {
+    .ranking-container {
+         opacity: 0;
+    }
 }
 
 .ranking-container.show {

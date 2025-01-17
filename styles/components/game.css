@@ -19,35 +19,43 @@
 
 .game-intro {
     position: fixed;
-    top: -50px;
+    top: 0;
     left: 0;
     width: 100%;
-    height: 100%;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 0px;
+    gap: 30px;
     z-index: 1;
-    transition: opacity 0.5s ease, visibility 0.5s ease;
+    background: #ff3737 url(../../img/flower.png);
+    transition: all 0.5s ease;
+}
+
+.game-intro.hide {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-100%);
 }
 
 .game-logo {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    width: 80%;
+    max-width: 500px;
+    margin-bottom: 30px;
+    transform: translateY(0);
+    transition: transform 0.5s ease;
 }
 
 .game-logo img {
-    width: 350px;
+    width: 100%;
     height: auto;
 }
 
 .difficulty-select {
     display: flex;
     gap: 20px;
-    margin: 20px 0;
+    margin-bottom: 30px;
 }
 
 .difficulty-btn {
@@ -71,19 +79,34 @@
 }
 
 #startButton {
-    padding: 10px 20px;
-    font-size: 2em;
+    padding: 15px 40px;
+    font-size: 1.5em;
     background-color: #ff0000;
-    border: 7px solid #ffdd00;
-    border-radius: 20px;
     color: white;
+    border: 4px solid #ffdd00;
+    border-radius: 10px;
     cursor: pointer;
-    font-family: 'Noto Sans TC', sans-serif;
-    font-weight: bold;
-    transition: transform 0.2s ease;
-    transform: translateY(20px);
+    transition: transform 0.3s ease;
 }
 
 #startButton:hover {
     transform: scale(1.1);
+}
+
+/* 手機版調整 */
+@media screen and (max-width: 768px) {
+    .game-logo {
+        width: 90%;
+        margin-bottom: 20px;
+    }
+
+    .difficulty-select {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    #startButton {
+        padding: 12px 30px;
+        font-size: 1.2em;
+    }
 } 
