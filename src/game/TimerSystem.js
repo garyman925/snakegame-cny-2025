@@ -1,7 +1,7 @@
 export class TimerSystem {
     constructor(game) {
         this.game = game;
-        this.gameDuration = 120; // 遊戲時長（秒）
+        this.gameDuration = 10; // 遊戲時長（秒）
         this.endTime = 0; // 遊戲結束時間點
         this.remainingTime = this.gameDuration;
         this.timer = null;
@@ -13,6 +13,15 @@ export class TimerSystem {
         // 獲取 UI 元素
         this.timerBar = document.querySelector('.timer-bar');
         this.timerText = document.querySelector('.timer-text');
+
+        // 添加重新開始按鈕的事件監聽
+        const restartButton = document.querySelector('.restart-button');
+        if (restartButton) {
+            restartButton.addEventListener('click', () => {
+                // 重新載入頁面
+                window.location.reload();
+            });
+        }
     }
 
     // 開始計時
@@ -85,9 +94,36 @@ export class TimerSystem {
         if (this.timer) {
             clearInterval(this.timer);
         }
+        
+        // 停止遊戲
         this.game.isGameOver = true;
-        // 觸發遊戲結束事件
-        this.game.gameOver();
+        
+        // 更新遊戲統計資料
+        this.game.updateGameStats();
+        
+        // 顯示遊戲結果界面
+        const resultElement = document.getElementById('gameResult');
+        if (resultElement) {
+            // 設置結束原因
+            const reasonElement = resultElement.querySelector('.game-over-reason');
+            if (reasonElement) {
+                reasonElement.textContent = '時間到！';
+            }
+            
+            // 移除 hidden class 來顯示結果界面
+            resultElement.classList.remove('hidden');
+            
+            // 確保重新開始按鈕可見
+            const restartButton = resultElement.querySelector('.restart-button');
+            if (restartButton) {
+                restartButton.style.display = 'block';
+            }
+        }
+        
+        // 更新排行榜
+        this.game.updateRankingData('score');
+        
+        console.log('timeUp - 遊戲結束');
     }
 
     // 重置計時器

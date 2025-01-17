@@ -39,6 +39,30 @@
     align-items: start;
 }
 
+/* 手機版樣式調整 */
+@media screen and (max-width: 768px) {
+    .result-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        top: 0%;
+    }
+
+    .score-container {
+        width: 100%;
+    }
+
+    .ranking-container {
+        width: 100%;
+        display: none;
+    }
+
+    .ranking-button {
+        display: block !important;
+        background-color: #45c8f1;
+    }
+}
+
 .result-container > div {
     flex: 1;
 }
@@ -107,6 +131,23 @@
 
 .restart-button:hover {
     transform: scale(1.1);
+}
+
+.ranking-button {
+    display: none;
+    padding: 12px 30px;
+    font-size: 1.2em;
+    color: white;
+    border: 4px solid #ffdd00;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+@media screen and (max-width: 768px) {
+    .ranking-button {
+        display: block !important;
+    }
 }
 
 .completion-popup {
@@ -308,4 +349,61 @@
 .difficulty-btn.selected {
     background: #45c8f1;
     color: white;
+}
+
+/* 添加淡入淡出動畫 */
+@keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-20px); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.score-container {
+    transition: all 0.3s ease;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.score-container.hide {
+    animation: fadeOut 0.3s ease forwards;
+    display: none;
+}
+
+.ranking-container {
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.ranking-container.show {
+    animation: fadeIn 0.3s ease forwards;
+    display: block;
+}
+
+/* 手機版樣式調整 */
+@media screen and (max-width: 768px) {
+    .result-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        top: 0%;
+    }
+
+    .score-container {
+        width: 100%;
+    }
+
+    .ranking-container {
+        width: 100%;
+        display: none;
+    }
+
+    .ranking-button {
+        display: block !important;
+        background-color: #45c8f1;
+    }
 } 

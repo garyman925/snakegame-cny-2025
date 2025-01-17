@@ -460,7 +460,7 @@ class SnakeGame {
         ]).then(() => {
             console.log('✅ 所有遊戲系統初始化完成');
             // 初始化完成後再生成食物
-            this.spawnFood();
+            //this.spawnFood();
         }).catch(err => {
             console.error('❌ 系統初始化失敗:', err);
         });
@@ -538,6 +538,9 @@ class SnakeGame {
         if (CollectWordSystem) {
             this.collectWordSystem = new CollectWordSystem(this);
         }
+
+        // 在 constructor 中添加
+        this.setupRankingToggle();
     }
 
     initConfettiSystem() {
@@ -2233,6 +2236,51 @@ class SnakeGame {
     // 移除 resetGame 方法，改用 gameResultSystem.resetGame()
 
     // ... 其他方法 ...
+
+    // 在 constructor 中添加
+    setupRankingToggle() {
+        const rankingButton = document.querySelector('.ranking-button');
+        const rankingContainer = document.querySelector('.ranking-container');
+        // 修改選擇器以匹配正確的元素
+        const scoreContainer = document.querySelector('.result-container .score-container');
+        
+        // 添加調試日誌
+        console.log('Elements found:', {
+            rankingButton,
+            rankingContainer,
+            scoreContainer
+        });
+
+        if (rankingButton && rankingContainer && scoreContainer) {
+            console.log('All elements found, adding click listener');
+            
+            rankingButton.addEventListener('click', () => {
+
+                if (!rankingContainer.classList.contains('show')) {
+                    console.log('Switching to ranking view');
+                    scoreContainer.classList.add('hide');
+  
+                    setTimeout(() => {
+                        rankingContainer.classList.add('show');
+                    }, 300);
+                    rankingButton.textContent = '返回成績';
+                } else {
+                    console.log('Switching to score view');
+                    rankingContainer.classList.remove('show');
+                    setTimeout(() => {
+                        scoreContainer.classList.remove('hide');
+                    }, 300);
+                    rankingButton.textContent = '查看排行榜';
+                }
+            });
+        } else {
+            console.warn('Some elements not found:', {
+                rankingButton: !!rankingButton,
+                rankingContainer: !!rankingContainer,
+                scoreContainer: !!scoreContainer
+            });
+        }
+    }
 }
 
 window.onload = () => {

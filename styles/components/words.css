@@ -65,4 +65,25 @@
 
 .collected-word.bounce::before {
     animation: rotateBorder 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* 手機版樣式調整 */
+@media screen and (max-width: 768px) {
+    .collected-words {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        transform: none;
+    }
+
+    .collected-word {
+        width: 40px;  /* 縮小寬度 */
+        height: 40px; /* 縮小高度 */
+        font-size: 1.8rem; /* 縮小字體 */
+        margin: 0 3px; /* 減少間距 */
+    }
+
+    .collected-word .hint {
+        font-size: 1.5rem;  /* 縮小提示文字大小 */
+    }
 } 

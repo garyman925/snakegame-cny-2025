@@ -20,9 +20,13 @@
 
     /* 遊戲結束畫面改為垂直排列 */
     .game-result {
-        min-width: 90vw;
+        top: 0;
+        width: 90%;
         padding: 20px;
+        flex-direction: column;
         margin-bottom: 0 !important;
+        top: 0;
+        transform: translate(-50%, 10px);
     }
 
     .score-result-container {
