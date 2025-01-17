@@ -88,6 +88,17 @@ export class CollectWordSystem {
         this.currentWordIndex = 0;
         this.clearCollectedWords();
         this.updateHints();
+
+        // 添加滑入動畫
+        const container = document.querySelector('.collected-words');
+        if (container) {
+            // 移除現有的動畫
+            container.classList.remove('slide-down');
+            // 強制重繪
+            void container.offsetWidth;
+            // 添加新的動畫
+            container.classList.add('slide-down');
+        }
     }
 
     // 收集一個新的文字

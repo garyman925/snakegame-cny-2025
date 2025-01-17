@@ -66,11 +66,6 @@
     color: #ff0000;
     font-size: 24px;
     font-weight: bold;
-    text-shadow: 
-        2px 2px 0 #000,
-        -2px -2px 0 #000,
-        2px -2px 0 #000,
-        -2px 2px 0 #000;
 }
 
 .combo-number {

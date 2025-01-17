@@ -67,6 +67,60 @@
     animation: rotateBorder 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
 }
 
+/* 添加新的 slide-down 動畫關鍵幀 */
+@keyframes slideDown {
+    0% {
+        transform: translateY(-200%) translateX(-50%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(-50%) translateX(-50%);
+        opacity: 1;
+    }
+}
+
+/* 添加新的動畫類 */
+.collected-words.slide-down {
+    animation: slideDownGeneral 0.8s ease forwards, gentleSwing 2s ease-in-out infinite 0.8s;
+}
+
+/* 添加通用的 slideDown 動畫關鍵幀 */
+@keyframes slideDownGeneral {
+    0% {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(-50%);
+        opacity: 1;
+    }
+}
+
+/* 可以獨立使用的動畫類 */
+.slide-down-animation {
+    animation: slideDownGeneral 0.8s ease forwards;
+}
+
+/* 添加 gentle-swing 動畫 */
+@keyframes gentleSwing {
+    0%, 100% {
+        transform: translateY(-50%);
+    }
+    50% {
+        transform: translateY(-50%) rotate(1deg);
+    }
+}
+
+/* 手機版的 gentle-swing */
+@keyframes gentleSwingMobile {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(0) rotate(1deg);
+    }
+}
+
 /* 手機版樣式調整 */
 @media screen and (max-width: 768px) {
     .collected-words {
@@ -85,5 +139,24 @@
 
     .collected-word .hint {
         font-size: 1.5rem;  /* 縮小提示文字大小 */
+    }
+
+    @keyframes slideDownMobile {
+        0% {
+            transform: translateY(-100%);
+            opacity: 0;
+        }
+        100% {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .collected-words.slide-down {
+        animation: slideDownMobile 0.8s ease forwards, gentleSwingMobile 2s ease-in-out infinite 0.8s;
+    }
+
+    .slide-down-animation {
+        animation: slideDownGeneral 0.8s ease forwards;
     }
 } 

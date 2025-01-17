@@ -1,3 +1,5 @@
+// 分數系統, 不包括連擊
+
 export class ScoreSystem {
     constructor(game) {
         this.game = game;
@@ -8,13 +10,13 @@ export class ScoreSystem {
         this.comboTimeWindow = 2000;
         
         this.scoreConfig = {
-            base: 1,
-            completion: 10,
+            base: 10,
+            completion: 100,
             orderMultiplier: 0.3,
             speedIncrease: 0.01,
             timeBonus: {
                 threshold: 30,
-                points: 1000
+                points: 10000
             }
         };
 
@@ -34,15 +36,15 @@ export class ScoreSystem {
         let score = this.scoreConfig.base;
         let bonusText = '';
 
-        // 使用 ComboSystem 的倍率
-        if (this.game.comboSystem && this.game.comboSystem.combo > 0) {
+        // 使用 ComboSystem 的倍率 - 改為只在combo > 1時才計算
+        if (this.game.comboSystem && this.game.comboSystem.combo > 1) {
             const multiplier = this.game.comboSystem.getCurrentMultiplier();
             score *= multiplier;
             bonusText += `連擊 x${this.game.comboSystem.combo}`;
         }
 
-        // 順序加成
-        if (isCorrectOrder) {
+        // 順序加成 - 只在有連擊時計算
+        if (isCorrectOrder && this.game.comboSystem && this.game.comboSystem.combo > 1) {
             const orderBonus = score * this.scoreConfig.orderMultiplier;
             score += orderBonus;
             bonusText += bonusText ? '\n順序加成!' : '順序加成!';
@@ -56,12 +58,23 @@ export class ScoreSystem {
     }
 
     updateScore(score, x, y, bonusText) {
-        this.score += score;
+        const oldScore = this.score;
+        const newScore = oldScore + score;
         
-        // 更新分數顯示
-        if (this.game.ui) {
-            this.game.ui.updateScore(this.score);
-        }
+        // 使用 anime.js 製作分數增加動畫
+        anime({
+            targets: this,
+            score: [oldScore, newScore],
+            duration: 800,  // 動畫持續800毫秒
+            easing: 'easeOutQuad',
+            round: 1,  // 將數值四捨五入到整數
+            update: () => {
+                // 更新分數顯示
+                if (this.game.ui) {
+                    this.game.ui.updateScore(Math.round(this.score));
+                }
+            }
+        });
 
         // 處理連擊效果
         if (this.combo > 1) {
@@ -155,11 +168,24 @@ export class ScoreSystem {
 
         // 連擊獎勵
         if (this.maxCombo >= 5) {
-            const comboBonus = this.maxCombo * 100;
+            const comboBonus = this.maxCombo * 1000;
             finalScore += comboBonus;
             bonuses.push({
                 text: `最高連擊 x${this.maxCombo}`,
                 points: comboBonus
+            });
+        }
+
+        // 更新最終分數顯示
+        const finalScoreElement = document.getElementById('finalScore');
+        if (finalScoreElement) {
+            // 使用 anime.js 製作分數增加動畫
+            anime({
+                targets: finalScoreElement,
+                innerHTML: [0, finalScore],
+                duration: 2000,
+                round: 1,
+                easing: 'easeOutExpo'
             });
         }
 
