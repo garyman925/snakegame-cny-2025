@@ -553,8 +553,26 @@ class SnakeGame {
             this.collectWordSystem = new CollectWordSystem(this);
         }
 
-        // 在 constructor 中添加
-        this.setupRankingToggle();
+        // 確保GameResultSystem初始化
+        Promise.all([
+            // ... 其他系統的初始化 ...
+            new Promise(resolve => {
+                if (GameResultSystem) {
+                    this.gameResultSystem = new GameResultSystem(this);
+                    resolve();
+                } else {
+                    const checkInterval = setInterval(() => {
+                        if (GameResultSystem) {
+                            this.gameResultSystem = new GameResultSystem(this);
+                            clearInterval(checkInterval);
+                            resolve();
+                        }
+                    }, 100);
+                }
+            })
+        ]).then(() => {
+            console.log('所有系統初始化完成');
+        });
     }
 
     initConfettiSystem() {

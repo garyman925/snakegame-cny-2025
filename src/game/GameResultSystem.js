@@ -39,15 +39,16 @@ export class GameResultSystem {
                     if (!rankingContainer.classList.contains('show')) {
                         console.log('切換到排行榜視圖');
                         scoreContainer.classList.add('hide');
-    
+                    
                         setTimeout(() => {
                             rankingContainer.classList.add('show');
                         }, 300);
                         rankingButton.textContent = '返回成績';
                     } else {
                         console.log('切換到成績視圖');
-                        rankingContainer.classList.remove('show');
+
                         setTimeout(() => {
+                            rankingContainer.classList.remove('show');
                             scoreContainer.classList.remove('hide');
                         }, 300);
                         rankingButton.textContent = '查看排行榜';
