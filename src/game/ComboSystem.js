@@ -3,30 +3,34 @@ export class ComboSystem {
         this.game = game;
         this.combo = 0;
         this.maxCombo = 0;
-        this.lastCollectTime = 0;
-        this.comboTimeWindow = 2000; // 2秒內收集可以保持連擊
-        
-        // 添加倍率設置
-        this.comboMultiplier = 1.3;  // 從 ScoreSystem 移過來的倍率設置
+        this.lastComboTime = 0;
+        this.comboTimeWindow = 2000; // 2秒內需要收集下一個
+        this.comboDisplay = null;
     }
 
-    // 增加連擊數
     increaseCombo() {
         this.combo++;
-        if (this.combo > this.maxCombo) {
-            this.maxCombo = this.combo;
-        }
-        this.lastCollectTime = Date.now();
+        this.maxCombo = Math.max(this.maxCombo, this.combo);
+        this.lastComboTime = Date.now();
         this.updateComboDisplay();
     }
 
-    // 重置連擊
     resetCombo() {
         this.combo = 0;
-        this.updateComboDisplay();
+        this.lastComboTime = 0;
+        if (this.game.audio) {
+            this.game.audio.stopComboSound();
+        }
+        if (this.comboDisplay) {
+            this.comboDisplay.classList.remove('active');
+        }
     }
 
-    // 更新連擊顯示
+    getCurrentMultiplier() {
+        // 使用對數函數計算倍率
+        return this.combo > 1 ? 1 + Math.log(this.combo) : 1;
+    }
+
     updateComboDisplay() {
         if (this.combo > 1) {
             // 播放 combo 音效
@@ -42,8 +46,8 @@ export class ComboSystem {
                 document.querySelector('.game-container').appendChild(comboDisplay);
             }
 
-            // 計算當前倍率
-            const multiplier = Math.pow(this.comboMultiplier, this.combo);
+            // 計算當前倍率並格式化
+            const multiplier = this.getCurrentMultiplier();
 
             // 更新文字，加入倍率顯示
             comboDisplay.innerHTML = `
@@ -54,9 +58,7 @@ export class ComboSystem {
             
             // 重置動畫
             comboDisplay.classList.remove('active');
-            // 強制瀏覽器重繪
-            void comboDisplay.offsetWidth;
-            // 觸發新的動畫
+            void comboDisplay.offsetWidth; // 強制瀏覽器重繪
             comboDisplay.classList.add('active');
 
             // 保存引用
@@ -80,17 +82,15 @@ export class ComboSystem {
         }
     }
 
-    // 檢查是否在連擊時間窗口內
     isInComboWindow() {
-        return (Date.now() - this.lastCollectTime) < this.comboTimeWindow;
+        if (this.combo === 0) return true;
+        return Date.now() - this.lastComboTime < this.comboTimeWindow;
     }
 
-    // 獲取當前連擊數
     getCombo() {
         return this.combo;
     }
 
-    // 獲取最高連擊數
     getMaxCombo() {
         return this.maxCombo;
     }
@@ -110,10 +110,5 @@ export class ComboSystem {
         this.comboDisplay.addEventListener('animationend', () => {
             this.comboDisplay.classList.remove('active');
         }, { once: true });
-    }
-
-    // 獲取當前倍率
-    getCurrentMultiplier() {
-        return Math.pow(this.comboMultiplier, this.combo);
     }
 } 

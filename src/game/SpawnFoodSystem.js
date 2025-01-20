@@ -21,29 +21,53 @@ export class SpawnFoodSystem {
         // 重新設置畫布大小以確保尺寸正確
         this.game.setupCanvasSize();
 
-        // 設置安全邊距，根據螢幕大小調整
-        const margin = this.game.isMobile ? this.game.pixelSize : this.game.pixelSize * 2;
-        const bottomMargin = this.game.isMobile ? 
-            (window.innerHeight <= 667 ? 180 : 150) : margin;
-        const minFoodDistance = this.game.isMobile ? 
-            this.game.pixelSize * 2.5 : 
-            this.game.pixelSize * 4;
+        // 針對不同螢幕尺寸調整參數
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        const isSmallScreen = screenWidth <= 390;
         
+        // 調整安全邊距和食物間距
+        const margin = isSmallScreen ? 
+            this.game.pixelSize * 1.5 : // 增加邊距
+            this.game.pixelSize * 2;
+        
+        const bottomMargin = isSmallScreen ? 
+            120 : // 增加底部邊距
+            150;
+        
+        const topMargin = isSmallScreen ? 
+            80 : // 增加頂部邊距
+            100;
+        
+        // 增加食物之間的最小距離
+        const minFoodDistance = isSmallScreen ?
+            this.game.pixelSize * 2.5 : // 增加食物間距
+            this.game.pixelSize * 3;
+
         // 獲取 game-header 的實際高度
         const header = document.querySelector('.game-header');
-        const headerHeight = header.getBoundingClientRect().height + 20;
-
-        // 計算可用區域
-        const availableWidth = this.game.canvas.width - margin * 2;
-        const availableHeight = this.game.canvas.height - headerHeight - bottomMargin - margin;
-        const startY = headerHeight + margin;
+        const headerHeight = header.getBoundingClientRect().height + topMargin;
 
         // 用於存儲所有已放置的食物位置
         const placedFoods = [];
 
-        // 生成正確的食物
+        // 首先生成所有正確的食物（必須全部生成）
         for (const word of this.game.currentWords) {
-            const position = this.findValidPosition(placedFoods, margin, headerHeight, minFoodDistance);
+            let position = null;
+            let attempts = 0;
+            const maxAttempts = 100;
+
+            // 持續嘗試直到找到有效位置
+            while (!position && attempts < maxAttempts) {
+                position = this.findValidPosition(
+                    placedFoods, 
+                    margin * 2,
+                    headerHeight, 
+                    minFoodDistance
+                );
+                attempts++;
+            }
+
             if (position) {
                 const food = {
                     x: position.x,
@@ -54,17 +78,39 @@ export class SpawnFoodSystem {
                 };
                 this.correctFoods.push(food);
                 placedFoods.push(position);
+            } else {
+                console.error('無法為正確字找到合適位置:', word);
             }
         }
 
-        // 生成誘餌食物
-        for (let i = 0; i < this.numberOfDecoys; i++) {
-            const position = this.findValidPosition(placedFoods, margin, headerHeight, minFoodDistance);
+        // 從錯誤詞組中隨機選擇4個不重複的字
+        const wrongWords = [...this.game.wrongWords];
+        const selectedWrongWords = [];
+        const numberOfDecoys = 4; // 固定生成4個錯誤字
+
+        for (let i = 0; i < numberOfDecoys && wrongWords.length > 0; i++) {
+            const randomIndex = Math.floor(Math.random() * wrongWords.length);
+            selectedWrongWords.push(wrongWords.splice(randomIndex, 1)[0]);
+        }
+
+        // 生成選中的錯誤字
+        for (const wrongWord of selectedWrongWords) {
+            let position = null;
+            let attempts = 0;
+            const maxAttempts = 100;
+
+            // 持續嘗試直到找到有效位置
+            while (!position && attempts < maxAttempts) {
+                position = this.findValidPosition(
+                    placedFoods, 
+                    margin * 2,
+                    headerHeight, 
+                    minFoodDistance
+                );
+                attempts++;
+            }
+
             if (position) {
-                const wrongWord = this.game.wrongWords[
-                    Math.floor(Math.random() * this.game.wrongWords.length)
-                ];
-                
                 const decoyFood = {
                     x: position.x,
                     y: position.y,
@@ -74,6 +120,8 @@ export class SpawnFoodSystem {
                 };
                 this.decoyFoods.push(decoyFood);
                 placedFoods.push(position);
+            } else {
+                console.error('無法為錯誤字找到合適位置:', wrongWord);
             }
         }
 
@@ -132,14 +180,19 @@ export class SpawnFoodSystem {
 
     // 尋找有效的食物位置
     findValidPosition(placedFoods, margin, headerHeight, minFoodDistance) {
-        const maxX = this.game.canvas.width - margin;
-        const minX = margin;
-        const maxY = this.game.canvas.height - margin;
-        const minY = margin + headerHeight;
+        const isSmallScreen = window.innerWidth <= 390;
+        
+        // 調整邊距乘數
+        const marginMultiplier = isSmallScreen ? 0.6 : 0.8;
+        
+        const maxX = this.game.canvas.width - margin * marginMultiplier;
+        const minX = margin * marginMultiplier;
+        const maxY = this.game.canvas.height - margin * marginMultiplier;
+        const minY = headerHeight + margin * 0.4; // 增加頂部間距
         
         let x, y;
         let attempts = 0;
-        const maxAttempts = 100;
+        const maxAttempts = 300;
 
         do {
             x = Math.floor(Math.random() * ((maxX - minX) / this.game.pixelSize)) * this.game.pixelSize + minX;
@@ -147,12 +200,12 @@ export class SpawnFoodSystem {
             attempts++;
             
             if (attempts > maxAttempts) {
-                console.warn('無法找到合適的食物位置');
+                console.warn('無法找到合適的食物位置，嘗試次數:', attempts);
                 return null;
             }
         } while (
-            this.isPositionOccupied(x, y, placedFoods, minFoodDistance) ||
-            this.isNearSnake(x, y, minFoodDistance)
+            this.isPositionOccupied(x, y, placedFoods, minFoodDistance * 0.8) || // 增加檢查距離
+            this.isNearSnake(x, y, minFoodDistance * 0.8)
         );
 
         return {x, y};

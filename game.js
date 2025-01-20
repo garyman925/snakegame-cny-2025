@@ -731,182 +731,6 @@ class SnakeGame {
         }
     }
 
-    // spawnFood() {
-    //     // 確保 drawFoodSystem 已經初始化
-    //     if (!this.drawFoodSystem) {
-    //         console.warn('DrawFoodSystem 尚未初始化');
-    //         return;
-    //     }
-
-    //     // 清除現有的食物
-    //     this.correctFoods = [];  // 修改這行
-    //     this.decoyFoods = [];    // 修改這行
-
-    //     // 重新設置畫布大小以確保尺寸正確
-    //     this.setupCanvasSize();
-
-    //     // 設置安全邊距，根據螢幕大小調整
-    //     const margin = this.isMobile ? this.pixelSize : this.pixelSize * 2; // 減少移動設備的邊距
-    //     const bottomMargin = this.isMobile ? 
-    //         (window.innerHeight <= 667 ? 180 : 150) : margin; // 稍微減少底部邊距
-    //     const minFoodDistance = this.isMobile ? 
-    //         this.pixelSize * 2.5 : // 減少移動設備上食物之間的最小距離
-    //         this.pixelSize * 4;    // 桌面版保持原來的距離
-        
-    //     // 獲取 game-header 的實際高度
-    //     const header = document.querySelector('.game-header');
-    //     const headerHeight = header.getBoundingClientRect().height + 20;
-
-    //     // 計算可用區域（確保使用最新的畫布尺寸）
-    //     const availableWidth = this.canvas.width - margin * 2;
-    //     const availableHeight = this.canvas.height - headerHeight - bottomMargin - margin;
-    //     const startY = headerHeight + margin;
-
-    //     // 針對小螢幕設備的額外安全檢查
-    //     const isSmallScreen = window.innerHeight <= 667;
-    //     const safeHeight = isSmallScreen ? 
-    //         this.canvas.height - 180 : // 減少安全高度限制
-    //         this.canvas.height - bottomMargin;
-
-    //     // 檢查並輸出計算的區域
-    //     console.log('Available area:', {
-    //         width: availableWidth,
-    //         height: availableHeight,
-    //         startY: startY,
-    //         canvasWidth: this.canvas.width,
-    //         canvasHeight: this.canvas.height
-    //     });
-
-    //     // 用於存儲所有已放置的食物位置
-    //     const placedFoods = [];
-
-    //     // 使用 CollectWordSystem 中的當前詞組生成食物
-    //     const wordsToSpawn = this.currentWords;  // 使用保存的當前詞組
-        
-    //     // 為每個正確字生成食物
-    //     for (let i = 0; i < wordsToSpawn.length; i++) {
-    //         const word = wordsToSpawn[i];
-    //         let x, y;
-    //         let validPosition = false;
-    //         let attempts = 0;
-    //         const maxAttempts = 100;
-
-    //         while (!validPosition && attempts < maxAttempts) {
-    //             x = Math.floor(Math.random() * availableWidth + margin);
-    //             y = Math.floor(Math.random() * availableHeight + startY);
-                
-    //             // 確保 y 不會太接近底部，針對小螢幕特別處理
-    //             if (y > safeHeight) {
-    //                 continue;
-    //             }
-
-    //             validPosition = true;
-    //             attempts++;
-
-    //             // 檢查與已放置食物的距離
-    //             for (const food of placedFoods) {
-    //                 const distance = Math.sqrt(
-    //                     Math.pow(x - food.x, 2) + 
-    //                     Math.pow(y - food.y, 2)
-    //                 );
-    //                 if (distance < minFoodDistance) {
-    //                     validPosition = false;
-    //                     break;
-    //                 }
-    //             }
-
-    //             // 檢查與蛇的距離
-    //             for (const segment of this.snake) {
-    //                 const distance = Math.sqrt(
-    //                     Math.pow(x - segment.x, 2) + 
-    //                     Math.pow(y - segment.y, 2)
-    //                 );
-    //                 if (distance < minFoodDistance) {
-    //                     validPosition = false;
-    //                     break;
-    //                 }
-    //             }
-    //         }
-
-    //         if (validPosition) {
-    //             const food = {
-    //                 x: x,
-    //                 y: y,
-    //                 word: word,
-    //                 collected: false,
-    //                 size: this.isMobile ? this.pixelSize * 0.8 : this.pixelSize
-    //             };
-    //             this.correctFoods.push(food);  // 保留這行
-    //             placedFoods.push(food);
-    //         }
-    //     }
-
-    //     // 生成誘餌食物
-    //     for (let i = 0; i < this.numberOfDecoys; i++) {
-    //         let x, y;
-    //         let validPosition = false;
-    //         let attempts = 0;
-    //         const maxAttempts = 100;
-
-    //         while (!validPosition && attempts < maxAttempts) {
-    //             x = Math.floor(Math.random() * availableWidth + margin);
-    //             y = Math.floor(Math.random() * availableHeight + startY);
-                
-    //             // 確保 y 不會太接近底部，針對小螢幕特別處理
-    //             if (y > safeHeight) {
-    //                 continue;
-    //             }
-
-    //             validPosition = true;
-    //             attempts++;
-
-    //             // 檢查與所有已放置食物的距離
-    //             for (const food of placedFoods) {
-    //                 const distance = Math.sqrt(
-    //                     Math.pow(x - food.x, 2) + 
-    //                     Math.pow(y - food.y, 2)
-    //                 );
-    //                 if (distance < minFoodDistance) {
-    //                     validPosition = false;
-    //                     break;
-    //                 }
-    //             }
-
-    //             // 檢查與蛇的距離
-    //             for (const segment of this.snake) {
-    //                 const distance = Math.sqrt(
-    //                     Math.pow(x - segment.x, 2) + 
-    //                     Math.pow(y - segment.y, 2)
-    //                 );
-    //                 if (distance < minFoodDistance) {
-    //                     validPosition = false;
-    //                     break;
-    //                 }
-    //             }
-    //         }
-
-    //         if (validPosition) {
-    //             const food = {
-    //                 x: x,
-    //                 y: y,
-    //                 word: this.getRandomWord(),
-    //                 size: this.isMobile ? this.pixelSize * 0.8 : this.pixelSize
-    //             };
-    //             this.decoyFoods.push(food);  // 保留這行
-    //             placedFoods.push(food);
-    //         }
-    //     }
-
-    //     // 初始化食物動畫
-    //     this.correctFoods.forEach(food => {
-    //         this.drawFoodSystem.addFoodAnimation(food);
-    //     });
-
-    //     this.decoyFoods.forEach(food => {
-    //         this.drawFoodSystem.addDecoyAnimation(food);
-    //     });
-    // }
-
     // 添加檢查位置是否重疊的方法
     isPositionOverlapping(x, y, positions) {
         const safeDistance = this.pixelSize * 2; // 設定安全距離
@@ -1047,21 +871,6 @@ class SnakeGame {
         // 獲取並繪製食物
         const { correctFoods, decoyFoods } = this.spawnFoodSystem.getAllFoods();
 
-        // 繪製正確食物
-        // if (correctFoods && correctFoods.length > 0) {  // 移除 drawFoodSystem 的檢查
-        //     correctFoods.forEach(food => {
-        //         if (!food.collected) {
-        //             this.drawFoodWithAnimation(food, null, this.snake[0]);
-        //         }
-        //     });
-        // }
-
-        // 繪製誘餌食物
-        // if (decoyFoods && decoyFoods.length > 0) {  // 移除 drawFoodSystem 的檢查
-        //     decoyFoods.forEach(decoy => {
-        //         this.drawFoodWithAnimation(decoy, null, this.snake[0]);
-        //     });
-        // }
 
         // 繪製道具
         if (this.powerUpSystem) {
@@ -1077,66 +886,6 @@ class SnakeGame {
             this.spawnFoodSystem.draw();
         }
     }
-
-    // 修改：帶動畫效果的食物繪製方法
-    // drawFoodWithAnimation(food, animation, snakeHead) {
-    //     // 確保 animation 存在
-    //     if (!animation) {
-    //         animation = {
-    //             rotation: 0,
-    //             isAnimating: false
-    //         };
-    //     }
-
-    //     // 檢查與蛇頭的距離
-    //     const dx = snakeHead.x - food.x;
-    //     const dy = snakeHead.y - food.y;
-    //     const distance = Math.sqrt(dx * dx + dy * dy);
-
-    //     // 更新動畫狀態
-    //     if (distance < this.foodAnimationDistance) {
-    //         animation.isAnimating = true;
-    //         animation.rotation = Math.sin(Date.now() * 0.01) * 0.2;
-    //     } else {
-    //         animation.isAnimating = false;
-    //         animation.rotation = 0;
-    //     }
-
-    //     // 繪製圓形背景
-    //     this.ctx.save();
-    //     this.ctx.translate(
-    //         food.x + this.pixelSize/2,
-    //         food.y + this.pixelSize/2
-    //     );
-    //     this.ctx.rotate(animation.rotation);
-        
-    //     // 繪製圓形
-    //     this.ctx.beginPath();
-    //     this.ctx.arc(0, 0, this.pixelSize * 0.75, 0, Math.PI * 2);
-    //     this.ctx.fillStyle = 'red';
-    //     this.ctx.fill();
-    //     this.ctx.closePath();
-        
-    //     this.ctx.restore();
-
-    //     // 繪製文字
-    //     this.ctx.save();
-    //     this.ctx.translate(
-    //         food.x + this.pixelSize/2,
-    //         food.y + this.pixelSize/2
-    //     );
-    //     this.ctx.rotate(animation.rotation);
-    //     this.ctx.fillStyle = '#fff';
-        
-    //     // 根據設備類型設置不同的字體大小
-    //     const fontSize = this.isMobile ? '25px' : '45px';
-    //     this.ctx.font = `900 ${fontSize} "Noto Sans TC"`;
-        
-    //     this.ctx.textAlign = 'center';
-    //     this.ctx.textBaseline = 'middle';
-    //     this.ctx.fillText(food.word, 0, 0);
-    //     this.ctx.restore();
-    // }
 
     move() {
         if (this.isPenalized) return;
@@ -1792,25 +1541,31 @@ class SnakeGame {
 
     // 新增方法：設置畫布大小
     setupCanvasSize() {
-        const gameContainer = document.querySelector('.game-container');
-        const containerRect = gameContainer.getBoundingClientRect();
+        // 獲取視窗大小
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        const isSmallScreen = windowWidth <= 390;
 
-        if (this.isMobile) {
-            // 在移動設備上使用容器的大小
-            this.canvas.width = containerRect.width;
-            this.canvas.height = containerRect.height;
-        } else {
-            // 在桌面設備上使用容器的大小
-            this.canvas.width = containerRect.width;
-            this.canvas.height = containerRect.height;
+        // 根據設備類型設置不同的像素大小
+        this.pixelSize = this.isMobile ? 
+            (isSmallScreen ? 
+                Math.min(windowWidth, windowHeight) * 0.08 : // 更小的手機螢幕
+                Math.min(windowWidth, windowHeight) * 0.1    // 一般手機螢幕
+            ) : 
+            Math.min(windowWidth, windowHeight) * 0.08;  // 電腦版的大小
+
+        // 設置畫布大小
+        this.canvas.width = windowWidth;
+        this.canvas.height = windowHeight;
+
+        // 如果是手機版，調整蛇的初始大小
+        if (this.isMobile && this.snake) {
+            // 重新調整蛇的每個段落的大小
+            this.snake = this.snake.map(segment => ({
+                x: Math.floor(segment.x / this.pixelSize) * this.pixelSize,
+                y: Math.floor(segment.y / this.pixelSize) * this.pixelSize
+            }));
         }
-
-        // 更新畫布的樣式以確保它正確顯示
-        this.canvas.style.width = '100%';
-        this.canvas.style.height = '100%';
-        this.canvas.style.position = 'absolute';
-        this.canvas.style.top = '0';
-        this.canvas.style.left = '0';
     }
 
     // 添加發光效果
@@ -2278,52 +2033,7 @@ class SnakeGame {
         console.log('遊戲統計資料已更新:', this.stats);
     }
 
-    // 移除 resetGame 方法，改用 gameResultSystem.resetGame()
-
-    // ... 其他方法 ...
-
-    // 在 constructor 中添加
-    // setupRankingToggle() {
-    //     const rankingButton = document.querySelector('.ranking-button');
-    //     const rankingContainer = document.querySelector('result-container .ranking-container');
-    //     const scoreContainer = document.querySelector('.result-container .score-container');
-        
-    //     // 添加調試日誌
-    //     console.log('Elements found:', {
-    //         rankingButton,
-    //         rankingContainer,
-    //         scoreContainer
-    //     });
-
-    //     if (rankingButton) {
-    //         console.log('All elements found, adding click listener');
-            
-    //         rankingButton.addEventListener('click', () => {
-    //             if (!rankingContainer.classList.contains('show')) {
-    //                 console.log('Switching to ranking view');
-    //                 scoreContainer.classList.add('hide');
-  
-    //                 setTimeout(() => {
-    //                     rankingContainer.classList.add('show');
-    //                 }, 300);
-    //                 rankingButton.textContent = '返回成績';
-    //             } else {
-    //                 console.log('Switching to score view');
-    //                 rankingContainer.classList.remove('show');
-    //                 setTimeout(() => {
-    //                     scoreContainer.classList.remove('hide');
-    //                 }, 300);
-    //                 rankingButton.textContent = '查看排行榜';
-    //             }
-    //         });
-    //     } else {
-    //         console.warn('Some elements not found:', {
-    //             rankingButton: !!rankingButton,
-    //             rankingContainer: !!rankingContainer,
-    //             scoreContainer: !!scoreContainer
-    //         });
-    //     }
-    // }
+ 
 }
 
 window.onload = () => {

@@ -14,6 +14,12 @@
     pointer-events: none;
 }
 
+@media (max-width: 390px) {
+    .speedup-timer {
+        font-size: 2rem;
+    }
+}
+
 .speedup-timer.show {
     opacity: 1;
     animation: pulseScale 0.5s infinite alternate;
@@ -32,6 +38,13 @@
     transition: opacity 0.3s ease;
     z-index: 1000;
     pointer-events: none;
+}
+
+
+@media (max-width: 390px) {
+    .status-timer {
+        font-size: 2rem;
+    }
 }
 
 .status-timer.show {
@@ -126,6 +139,12 @@
     align-items: center;
     gap: 10px;
     pointer-events: none;
+}
+
+@media (max-width: 390px) {
+    .powerup-notification {
+        font-size: 1rem;
+    }
 }
 
 /* 加速道具不同 */
@@ -269,7 +288,6 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    text-shadow: -3px 3px 0px #ffffff;
     -webkit-text-stroke-width: thin;
     font-family: "Kanit", serif;
     font-style: normal;
@@ -278,6 +296,12 @@
     z-index: 1000;
     opacity: 0;
     text-align: center;
+}
+
+@media (max-width: 390px) {
+    .effect-duration-display {
+        font-size: 1.5rem;
+    }
 }
 
 .effect-duration-display.active {
@@ -290,7 +314,7 @@
 }
 
 .effect-duration-display.speed-effect {
-    color: #fffa35;
+    color: #ff0a47
 }
 
 .effect-duration-display.invincible-effect {
