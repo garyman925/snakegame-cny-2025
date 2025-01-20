@@ -573,6 +573,39 @@ class SnakeGame {
         ]).then(() => {
             console.log('所有系統初始化完成');
         });
+
+        this.initializeUI();
+    }
+
+    initializeUI() {
+        // 添加遊戲說明按鈕事件
+        const settingButton = document.getElementById('settingButton');
+        const instructionPopup = document.querySelector('.instruction-popup');
+        const instructionOverlay = document.querySelector('.instruction-overlay');
+        const closeButton = document.querySelector('.instruction-close');
+        const closeContainer = document.querySelector('.instruction-close-container');
+
+        if (settingButton && instructionPopup && instructionOverlay) {
+            settingButton.addEventListener('click', () => {
+                instructionPopup.classList.add('active');
+                instructionOverlay.classList.add('active');
+                closeContainer.classList.add('active');
+            });
+
+            // 關閉按鈕事件
+            closeButton.addEventListener('click', () => {
+                instructionPopup.classList.remove('active');
+                instructionOverlay.classList.remove('active');
+                closeContainer.classList.remove('active');
+            });
+
+            // 點擊遮罩層關閉
+            instructionOverlay.addEventListener('click', () => {
+                instructionPopup.classList.remove('active');
+                instructionOverlay.classList.remove('active');
+                closeContainer.classList.remove('active');
+            });
+        }
     }
 
     initConfettiSystem() {
@@ -1546,24 +1579,33 @@ class SnakeGame {
         const windowHeight = window.innerHeight;
         const isSmallScreen = windowWidth <= 390;
 
+        // 保存舊的 pixelSize
+        const oldPixelSize = this.pixelSize;
+
         // 根據設備類型設置不同的像素大小
-        this.pixelSize = this.isMobile ? 
+        const newPixelSize = this.isMobile ? 
             (isSmallScreen ? 
                 Math.min(windowWidth, windowHeight) * 0.08 : // 更小的手機螢幕
                 Math.min(windowWidth, windowHeight) * 0.1    // 一般手機螢幕
             ) : 
-            Math.min(windowWidth, windowHeight) * 0.08;  // 電腦版的大小
+            Math.min(windowWidth, windowHeight) * 0.05;  // 電腦版的大小調小
 
-        // 設置畫布大小
-        this.canvas.width = windowWidth;
-        this.canvas.height = windowHeight;
+        // 只在首次初始化或視窗大小真正改變時才更新 pixelSize
+        if (!this.pixelSize || Math.abs(this.pixelSize - newPixelSize) > 0.1) {
+            this.pixelSize = newPixelSize;
+        }
 
-        // 如果是手機版，調整蛇的初始大小
-        if (this.isMobile && this.snake) {
-            // 重新調整蛇的每個段落的大小
+        // 設置畫布大小（只在真正需要時更新）
+        if (this.canvas.width !== windowWidth || this.canvas.height !== windowHeight) {
+            this.canvas.width = windowWidth;
+            this.canvas.height = windowHeight;
+        }
+
+        // 只在 pixelSize 真正改變時才調整蛇的位置
+        if (this.snake && oldPixelSize !== this.pixelSize) {
             this.snake = this.snake.map(segment => ({
-                x: Math.floor(segment.x / this.pixelSize) * this.pixelSize,
-                y: Math.floor(segment.y / this.pixelSize) * this.pixelSize
+                x: Math.round(segment.x / this.pixelSize) * this.pixelSize,
+                y: Math.round(segment.y / this.pixelSize) * this.pixelSize
             }));
         }
     }

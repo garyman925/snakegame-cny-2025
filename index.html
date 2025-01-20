@@ -21,7 +21,12 @@
             <button class="difficulty-btn" data-difficulty="NORMAL">普通</button>
             <button class="difficulty-btn" data-difficulty="HARD">困難</button>
         </div>
-        <button id="startButton">開始遊戲</button>
+        <div class="remaining-times">遊戲尚餘3次</div>
+        <div class="game-buttons">
+            <button id="startButton" class="btn-style">開始遊戲</button>
+            <button id="settingButton" class="btn-style">遊戲玩法</button>
+            <button id="rankingButton" class="btn-style">查看排行榜</button>
+        </div>
     </div>
 
     <div class="game-container">
@@ -120,6 +125,46 @@
 
     <div id="completionPopup" class="completion-popup hidden">
         <div class="completed-phrase"></div>
+    </div>
+
+    <div class="instruction-overlay"></div>
+    <div class="instruction-popup">
+        <h1>遊戲規則</h1>
+        <section>
+            <h2>每日挑戰機會</h2>
+            <ul>
+                <li>每日登入即玩：每日登入平台即可獲得一次挑戰機會！</li>
+                <li>完成練習再加碼：準時完成當天練習，可獲得額外一次挑戰機會，讓你賺更多分！</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>遊戲玩法</h2>
+            <ul>
+                <li>祝福詞加分：吃下正確的祝福字可得 10分！</li>
+                <li>避開干擾詞：吃到干擾詞，將扣除2分！</li>
+                <li>生存挑戰：小蛇不能撞到自己的身體，否則遊戲結束！</li>
+                <li>連擊增長：連續吃對祝福詞，得分更快！</li>
+                <li>無敵模式：吃到星星道具，啟動3秒無敵！</li>
+                <li>時間暫停：吃到時鐘道具，時間倒數暫停3秒！</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>金幣兌換與上限</h2>
+            <ul>
+                <li>金幣獲取：每10分可兌換1個金幣！</li>
+                <li>每日上限：每天最多可賺取100個金幣！</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>排行榜挑戰</h2>
+            <p>查看「蛇吞吞排行榜」，看看你吞下了多少祝福詞、賺了多少金幣，與其他玩家一較高下，奪取榜首！</p>
+        </section>
+    </div>
+    <div class="instruction-close-container">
+        <button class="btn-style instruction-close">關閉</button>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>

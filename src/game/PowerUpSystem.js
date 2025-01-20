@@ -236,8 +236,9 @@ export class PowerUpSystem {
 
     spawnPowerUp() {
         try {
-            const types = Object.keys(this.powerUpTypes);
-            const randomType = types[Math.floor(Math.random() * types.length)];
+            // 只使用時間暫停和無敵道具
+            const availableTypes = ['TIME_FREEZE', 'INVINCIBLE'];
+            const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
 
             // 獲取遊戲區域的邊界
             const margin = this.game.pixelSize * 2;
