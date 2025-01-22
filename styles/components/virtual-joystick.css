@@ -1,0 +1,73 @@
+.virtual-joystick {
+    position: absolute;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    grid-template-areas:
+        ". up ."
+        "left . right"
+        ". down .";
+    gap: 15px;
+    padding: 15px;
+    z-index: 1000;
+    background: transparent;
+    border-radius: 15px;
+}
+
+.joystick-btn {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: 0px 6px 8px #00000012;
+}
+
+.joystick-btn.active {
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(0.95);
+}
+
+.joystick-btn.up { grid-area: up; }
+.joystick-btn.down { grid-area: down; }
+.joystick-btn.left { grid-area: left; }
+.joystick-btn.right { grid-area: right; }
+
+.arrow {
+    width: 20px;
+    height: 20px;
+    border: solid rgb(223 223 223);
+    border-width: 0 4px 4px 0;
+    display: inline-block;
+}
+
+.up .arrow { transform: rotate(-135deg); }
+.down .arrow { transform: rotate(45deg); }
+.left .arrow { transform: rotate(135deg); }
+.right .arrow { transform: rotate(-45deg); }
+
+/* 當遊戲開始時顯示虛擬搖桿 */
+.game-container.game-started .virtual-joystick {
+    display: grid;
+}
+
+/* 在橫屏模式下的位置調整 */
+@media (orientation: landscape) {
+    .virtual-joystick {
+        left: 150px;
+        bottom: 50%;
+        transform: translateY(50%);
+    }
+}
+
+/* 確保虛擬搖桿不會與其他 UI 元素重疊 */
+.game-container {
+    position: relative;
+} 

@@ -30,6 +30,8 @@ export class ScoreSystem {
 
         // 添加連擊相關的DOM元素引用
         this.comboIndicator = null;
+
+        this.scoreDisplay = document.querySelector('.current-score');
     }
 
     calculateScore(index, isCorrectOrder) {
@@ -37,10 +39,12 @@ export class ScoreSystem {
         let bonusText = '';
 
         // 使用 ComboSystem 的倍率 - 改為只在combo > 1時才計算
-        if (this.game.comboSystem && this.game.comboSystem.combo > 1) {
-            const multiplier = this.game.comboSystem.getCurrentMultiplier();
+        if (this.game.comboSystem) {
+            const multiplier = this.game.comboSystem.currentMultiplier;  // 使用當前倍率
             score *= multiplier;
-            bonusText += `連擊 x${this.game.comboSystem.combo}`;
+            if (this.game.comboSystem.combo > 1) {
+                bonusText += `連擊 x${this.game.comboSystem.combo}`;
+            }
         }
 
         // 順序加成 - 只在有連擊時計算
@@ -65,65 +69,15 @@ export class ScoreSystem {
         anime({
             targets: this,
             score: [oldScore, newScore],
-            duration: 800,  // 動畫持續800毫秒
+            duration: 800,
             easing: 'easeOutQuad',
-            round: 1,  // 將數值四捨五入到整數
+            round: 1,
             update: () => {
-                // 更新分數顯示
                 if (this.game.ui) {
                     this.game.ui.updateScore(Math.round(this.score));
                 }
             }
         });
-
-        // 處理連擊效果
-        if (this.combo > 1) {
-            // 顯示連擊效果
-            this.showComboEffect(x, y);
-            
-            // 播放連擊音效
-            const pitchRate = Math.min(1.0 + (this.combo - 1) * 0.2, 2.0);
-            const comboSound = new Howl({
-                src: ['snd/combo.mp3'],
-                volume: 0.8,
-                rate: pitchRate
-            });
-            comboSound.play();
-
-            // 加快背景音樂
-            if (this.game.bgm) {
-                const bgmRate = Math.min(1.0 + (this.combo - 1) * 0.1, 1.5);
-                this.game.bgm.rate(bgmRate);
-            }
-        }
-    }
-
-    showComboEffect(x, y) {
-        const comboDisplay = document.createElement('div');
-        comboDisplay.className = 'combo-display';
-        
-        // 計算當前倍率
-        const multiplier = Math.pow(this.scoreConfig.comboMultiplier, this.combo);
-        
-        comboDisplay.innerHTML = `
-            <span class="combo-text">連擊</span>
-            <span class="combo-number">x${this.combo}</span>
-            <span class="multiplier">${multiplier.toFixed(1)}倍</span>
-        `;
-
-        comboDisplay.style.cssText = `
-            position: absolute;
-            left: ${x}px;
-            top: ${y - 40}px;
-            animation: comboAppear 0.5s ease forwards;
-        `;
-
-        document.body.appendChild(comboDisplay);
-
-        setTimeout(() => {
-            comboDisplay.style.animation = 'comboDisappear 0.2s ease forwards';
-            setTimeout(() => comboDisplay.remove(), 200);
-        }, 800);
     }
 
     breakCombo() {
@@ -190,5 +144,56 @@ export class ScoreSystem {
         }
 
         return { finalScore, bonuses };
+    }
+
+    // 添加扣分方法
+    deductScore(x, y) {
+        const oldScore = this.score;
+        this.score = Math.max(0, this.score - 5);
+        
+        // 重置 ComboSystem 的倍率
+        if (this.game.comboSystem) {
+            this.game.comboSystem.resetCombo();
+        }
+
+        // 顯示扣分動畫
+        this.showPenaltyEffect(x, y);
+        
+        // 使用 anime.js 製作分數減少動畫
+        anime({
+            targets: this,
+            score: [oldScore, this.score],
+            duration: 800,
+            easing: 'easeOutQuad',
+            round: 1,
+            update: () => {
+                if (this.scoreDisplay) {
+                    this.scoreDisplay.textContent = Math.round(this.score);
+                }
+            }
+        });
+
+        // 添加分數減少的視覺效果
+        if (this.scoreDisplay) {
+            this.scoreDisplay.classList.add('score-decrease');
+            setTimeout(() => {
+                this.scoreDisplay.classList.remove('score-decrease');
+            }, 500);
+        }
+    }
+
+    // 顯示扣分效果
+    showPenaltyEffect(x, y) {
+        const penaltyText = document.createElement('div');
+        penaltyText.className = 'score-popup penalty';
+        penaltyText.textContent = '-5分';
+        penaltyText.style.left = `${x}px`;
+        penaltyText.style.top = `${y}px`;
+
+        document.body.appendChild(penaltyText);
+
+        setTimeout(() => {
+            penaltyText.remove();
+        }, 1000);
     }
 } 

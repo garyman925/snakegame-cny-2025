@@ -6,6 +6,8 @@ export class ComboSystem {
         this.lastComboTime = 0;
         this.comboTimeWindow = 2000; // 2秒內需要收集下一個
         this.comboDisplay = null;
+        this.baseMultiplier = 1;  // 基礎倍率
+        this.currentMultiplier = 1;  // 當前倍率
     }
 
     increaseCombo() {
@@ -18,6 +20,8 @@ export class ComboSystem {
     resetCombo() {
         this.combo = 0;
         this.lastComboTime = 0;
+        this.currentMultiplier = this.baseMultiplier;  // 重置為基礎倍率
+        
         if (this.game.audio) {
             this.game.audio.stopComboSound();
         }
@@ -27,8 +31,11 @@ export class ComboSystem {
     }
 
     getCurrentMultiplier() {
-        // 使用對數函數計算倍率
-        return this.combo > 1 ? 1 + Math.log(this.combo) : 1;
+        if (this.combo <= 1) {
+            return this.baseMultiplier;
+        }
+        // 每增加一次連擊，倍率增加 0.2
+        return this.baseMultiplier + (this.combo - 1) * 0.2;
     }
 
     updateComboDisplay() {
@@ -46,14 +53,14 @@ export class ComboSystem {
                 document.querySelector('.game-container').appendChild(comboDisplay);
             }
 
-            // 計算當前倍率並格式化
-            const multiplier = this.getCurrentMultiplier();
-
+            // 更新當前倍率
+            this.currentMultiplier = this.getCurrentMultiplier();
+            
             // 更新文字，加入倍率顯示
             comboDisplay.innerHTML = `
                 <div class="combo-text">COMBO</div>
                 <div class="combo-number">x${this.combo}</div>
-                <div class="multiplier">${multiplier.toFixed(1)}倍</div>
+                <div class="multiplier">${this.currentMultiplier.toFixed(1)}倍</div>
             `;
             
             // 重置動畫

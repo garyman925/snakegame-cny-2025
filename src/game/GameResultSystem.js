@@ -126,8 +126,38 @@ export class GameResultSystem {
 
         // 更新分數
         const scoreDisplay = this.resultElement.querySelector('.score-value');
+        const finalScoreElement = document.getElementById('finalScore');
+        const totalScore = this.game.scoreSystem.score; // 從 ScoreSystem 獲取分數
+        
+        // 先更新 finalScore
+        if (finalScoreElement) {
+            anime({
+                targets: finalScoreElement,
+                innerHTML: [0, totalScore],
+                duration: 2000,
+                round: 1,
+                easing: 'easeOutExpo'
+            });
+        }
+
+        // 延遲 1 秒後更新 score-value
         if (scoreDisplay) {
-            scoreDisplay.textContent = this.game.score;
+            anime({
+                targets: scoreDisplay,
+                innerHTML: [0, totalScore],
+                duration: 2000,
+                delay: 500,  // 延遲1秒
+                round: 1,
+                easing: 'easeInOutQuart',  // 使用不同的動畫曲線
+                update: function(anim) {
+                    // 添加數字跳動效果
+                    if (anim.progress > 0 && anim.progress < 100) {
+                        scoreDisplay.classList.add('score-jump');
+                    } else {
+                        scoreDisplay.classList.remove('score-jump');
+                    }
+                }
+            });
         }
 
         // 更新完成的祝賀詞列表

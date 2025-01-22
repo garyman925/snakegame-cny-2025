@@ -262,23 +262,26 @@ export class SpawnFoodSystem {
     }
 
     drawFoodShape(ctx, food, animation) {
-        const size = this.game.pixelSize;
+        const size = this.game.pixelSize;  // 使用與蛇相同的大小
         const x = food.x + (animation ? animation.offsetX : 0);
         const y = food.y + (animation ? animation.offsetY : 0);
         
+        // 調整圓角大小，使其更接近蛇的視覺效果
+        const borderRadius = 5;  // 可以調整這個值來改變圓角程度
+        
         ctx.beginPath();
-        ctx.roundRect(x, y, size, size, 5);
+        ctx.roundRect(x, y, size, size, borderRadius);
         ctx.fill();
         ctx.stroke();
     }
 
     drawFoodText(ctx, food, animation) {
-        const size = this.game.pixelSize;
+        const size = this.game.pixelSize;  // 使用與蛇相同的大小
         const x = food.x + (animation ? animation.offsetX : 0);
         const y = food.y + (animation ? animation.offsetY : 0);
         
         ctx.fillStyle = '#FFFFFF';  // 白色文字
-        ctx.font = `${size * 0.6}px Arial`;
+        ctx.font = `${size * 0.7}px Arial`;  // 調整字體大小為食物大小的 70%
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(food.word, x + size/2, y + size/2);
@@ -324,5 +327,14 @@ export class SpawnFoodSystem {
     cleanup() {
         this.foodAnimations.clear();
         this.clearAllFoods();
+    }
+
+    // 添加移除食物的方法
+    removeFood(food) {
+        // 從正確食物陣列中移除
+        this.correctFoods = this.correctFoods.filter(f => f !== food);
+        
+        // 從錯誤食物陣列中移除
+        this.decoyFoods = this.decoyFoods.filter(f => f !== food);
     }
 } 

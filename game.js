@@ -141,6 +141,7 @@ import('./src/game/GameResultSystem.js')
 
 import { CollectWordSystem } from './src/game/CollectWordSystem.js';
 import { SpawnFoodSystem } from './src/game/SpawnFoodSystem.js';
+import { VirtualJoystickSystem } from './src/game/VirtualJoystickSystem.js';
 
 class SnakeGame {
     constructor() {
@@ -257,9 +258,9 @@ class SnakeGame {
 
         // 添加懲罰相關屬性
         this.isPenalized = false;
-        this.penaltyDuration = 1000;  // 1秒停止移動
-        this.transparentDuration = 3000;  // 3秒透明處罰時間
-        this.isTransparent = false;  // 新增：是否處於透明狀態
+        this.penaltyDuration = 500;  // 從 1000 改為 500 毫秒（0.5秒）停止移動
+        this.transparentDuration = 1500;  // 從 3000 改為 1500 毫秒（1.5秒）透明處罰時間
+        this.isTransparent = false;
 
 
         // 加載背景圖案
@@ -575,6 +576,9 @@ class SnakeGame {
         });
 
         this.initializeUI();
+
+        // 初始化虛擬搖桿系統
+        this.virtualJoystick = new VirtualJoystickSystem(this);
     }
 
     initializeUI() {
@@ -676,92 +680,97 @@ class SnakeGame {
         try {
             // 等待所有系統準備好
             this.systemsReady.then(() => {
-        // 顯示遊戲界面元素
-        document.querySelector('.game-container').classList.add('game-started');
+                // 顯示遊戲界面元素
+                document.querySelector('.game-container').classList.add('game-started');
 
-        // 重置蛇的位置
-        this.snake = [
-            {x: 100, y: 50},
-            {x: 50, y: 50},
-            {x: 0, y: 50}
-        ];
-        this.direction = 'right';
-        this.score = 0;
-        this.currentWordIndex = 0;
-        this.isGameOver = false;
+                // 重置蛇的位置
+                this.snake = [
+                    {x: 100, y: 50},
+                    {x: 50, y: 50},
+                    {x: 0, y: 50}
+                ];
+                this.direction = 'right';
+                this.score = 0;
+                this.currentWordIndex = 0;
+                this.isGameOver = false;
 
-        // 重新創建背景圖案
-        if (this.backgroundPattern.complete) {
-            const patternCanvas = document.createElement('canvas');
-            const patternContext = patternCanvas.getContext('2d');
-            patternCanvas.width = this.backgroundPattern.width;
-            patternCanvas.height = this.backgroundPattern.height;
-            
-            patternContext.globalAlpha = 0.02;
-            patternContext.drawImage(this.backgroundPattern, 0, 0);
-            
-            this.pattern = this.ctx.createPattern(patternCanvas, 'repeat');
-        }
-
-        // 重置遊戲狀態
-        this.remainingTime = this.gameDuration;
-        this.completedWords = [];
-        this.currentGreetingIndex = 0;
-        this.completedGreetings = [];
-        
-        // 設置遊戲結束時間
-        this.endTime = Date.now() + (this.gameDuration * 1000);
-        
-        // 開始計時
-        if (this.timerSystem) {
-            this.timerSystem.startTimer();
-        }
-
-        // 隱藏結果顯示
-        //this.hideGameResult();
-        
-        // 清空並準備新的詞組
-        this.clearCollectedWords();
-        this.selectNextGreeting(true); // 添加參數表示是初始化調用
-
-        // 隱藏開始按鈕
-        document.getElementById('startButton').style.display = 'none';
-
-        // 初始化動畫狀態
-        this.animationProgress = 0;
-        this.lastPosition = [...this.snake];
-
-                // 使用難度系統初始化參數
-                if (this.difficultySystem) {
-                    this.difficultySystem.initializeDifficulty();
+                // 重新創建背景圖案
+                if (this.backgroundPattern.complete) {
+                    const patternCanvas = document.createElement('canvas');
+                    const patternContext = patternCanvas.getContext('2d');
+                    patternCanvas.width = this.backgroundPattern.width;
+                    patternCanvas.height = this.backgroundPattern.height;
+                    
+                    patternContext.globalAlpha = 0.02;
+                    patternContext.drawImage(this.backgroundPattern, 0, 0);
+                    
+                    this.pattern = this.ctx.createPattern(patternCanvas, 'repeat');
                 }
 
-                // 停止紙碎動畫
-                if (this.confettiSystem) {
-                    this.confettiSystem.stop();
+                // 重置遊戲狀態
+                this.remainingTime = this.gameDuration;
+                this.completedWords = [];
+                this.currentGreetingIndex = 0;
+                this.completedGreetings = [];
+                
+                // 設置遊戲結束時間
+                this.endTime = Date.now() + (this.gameDuration * 1000);
+                
+                // 開始計時
+                if (this.timerSystem) {
+                    this.timerSystem.startTimer();
                 }
 
-                // 只播放開始遊戲的音效
-                if (this.audio) {
-                    this.audio.playSound('crash');
-                    setTimeout(() => {
-                        this.audio.playSound('crash');
-                    }, 200);
-                }
+                // 隱藏結果顯示
+                //this.hideGameResult();
+                
+                // 清空並準備新的詞組
+                this.clearCollectedWords();
+                this.selectNextGreeting(true); // 添加參數表示是初始化調用
 
-                // 重置道具系統
-                if (this.powerUpSystem) {
-                    this.powerUpSystem.powerUps = [];
-                    this.powerUpSystem.lastPowerUpSpawn = Date.now();
-                    // 立即生成第一個道具
-                    this.powerUpSystem.spawnPowerUp();
-                    console.log('PowerUpSystem 已重置並生成初始道具');
+                // 隱藏開始按鈕
+                document.getElementById('startButton').style.display = 'none';
+
+                // 初始化動畫狀態
+                this.animationProgress = 0;
+                this.lastPosition = [...this.snake];
+
+                        // 使用難度系統初始化參數
+                        if (this.difficultySystem) {
+                            this.difficultySystem.initializeDifficulty();
+                        }
+
+                        // 停止紙碎動畫
+                        if (this.confettiSystem) {
+                            this.confettiSystem.stop();
+                        }
+
+                        // 只播放開始遊戲的音效
+                        if (this.audio) {
+                            this.audio.playSound('crash');
+                            setTimeout(() => {
+                                this.audio.playSound('crash');
+                            }, 200);
+                        }
+
+                        // 重置道具系統
+                        if (this.powerUpSystem) {
+                            this.powerUpSystem.powerUps = [];
+                            this.powerUpSystem.lastPowerUpSpawn = Date.now();
+                            // 立即生成第一個道具
+                            this.powerUpSystem.spawnPowerUp();
+                            console.log('PowerUpSystem 已重置並生成初始道具');
+                        }
+
+                        // 顯示虛擬搖桿（在遊戲容器顯示後）
+                        if (this.virtualJoystick) {
+                            this.virtualJoystick.show();
+                        }
+                    });
+                } catch (error) {
+                    console.error('遊戲初始化失敗:', error);
                 }
-            });
-        } catch (error) {
-            console.error('遊戲初始化失敗:', error);
-        }
-    }
+            }
 
     // 修改 selectNextGreeting 方法
     selectNextGreeting(isInitial = false) {
@@ -918,7 +927,7 @@ class SnakeGame {
                 // 移動到蛇頭中心點，稍微向下偏移以遮蓋接駁部分
                 this.ctx.translate(
                     x + this.pixelSize/2, 
-                    y + this.pixelSize/2 + this.pixelSize * 0.1 // 向下偏移 10%
+                    y + this.pixelSize/2 // 向下偏移 10%
                 );
                 
                 // 根據方向旋轉，加上 90 度的基礎旋轉
@@ -932,7 +941,7 @@ class SnakeGame {
                 this.ctx.rotate(rotation);
                 
                 // 繪製蛇頭圖片，放大 20% 並調整偏移以保持中心點
-                const headSize = this.pixelSize * 1.4; // 放大 20%
+                const headSize = this.pixelSize * 1.2; // 放大 20%
                 this.ctx.drawImage(
                     this.snakeHead,
                     -headSize/2,
@@ -1061,6 +1070,11 @@ class SnakeGame {
         
         // 顯示 game-intro
         document.querySelector('.game-intro').classList.remove('hide');
+
+        // 隱藏虛擬搖桿
+        if (this.virtualJoystick) {
+            this.virtualJoystick.hide();
+        }
     }
 
     // 添加新方法：獲取插值後的蛇頭位置
@@ -1089,14 +1103,18 @@ class SnakeGame {
     }
 
     // 修改檢查食物碰撞的方法
-    checkFoodCollision(headPosition) {
-        if (this.isTransparent) return; 
+    checkFoodCollision(head) {
+        if (this.isTransparent) return;
 
-        const head = {
-            x: headPosition.x,
-            y: headPosition.y,
-            width: this.pixelSize,
-            height: this.pixelSize
+        // 縮小碰撞區域為原來的 60%
+        const collisionSize = this.pixelSize * 0.6;
+        const offset = (this.pixelSize - collisionSize) / 2;
+
+        const headRect = {  // 改名為 headRect
+            x: head.x + offset,
+            y: head.y + offset,
+            width: collisionSize,
+            height: collisionSize
         };
 
         const { correctFoods, decoyFoods } = this.spawnFoodSystem.getAllFoods();
@@ -1106,18 +1124,18 @@ class SnakeGame {
             if (food.collected) return;
 
             const foodRect = {
-                x: food.x,
-                y: food.y,
-                width: food.size,
-                height: food.size
+                x: food.x + offset,
+                y: food.y + offset,
+                width: collisionSize,
+                height: collisionSize
             };
 
-            if (Collider2D.boxCollision(head, foodRect)) {
+            if (Collider2D.boxCollision(headRect, foodRect)) {  // 使用 headRect
                 food.collected = true;
 
                 // 顯示正確表情
                 if (this.effects) {
-                    this.effects.showEmoji('correct', headPosition.x, headPosition.y);
+                    this.effects.showEmoji('correct', head.x, head.y);
                 }
 
                 // 更新連擊系統
@@ -1164,24 +1182,27 @@ class SnakeGame {
         // 檢查誘餌食物碰撞
         decoyFoods.forEach((decoy, index) => {
             const decoyRect = {
-                x: decoy.x,
-                y: decoy.y,
-                width: decoy.size,
-                height: decoy.size
+                x: decoy.x + offset,
+                y: decoy.y + offset,
+                width: collisionSize,
+                height: collisionSize
             };
 
-            if (Collider2D.boxCollision(head, decoyRect)) {
-                // 如果是無敵狀態，不觸發懲罰效果
+            if (Collider2D.boxCollision(headRect, decoyRect)) {
                 if (!this.isInvincible) {
-                    // 確保 comboSystem 已初始化
-                    if (this.comboSystem) {
-                        this.comboSystem.resetCombo();
-                    }
-                    
+                    // 扣分並顯示扣分效果
+                    const canvasRect = this.canvas.getBoundingClientRect();
+                    const screenX = canvasRect.left + decoy.x + this.pixelSize/2;
+                    const screenY = canvasRect.top + decoy.y - 20;
+                    this.scoreSystem.deductScore(screenX, screenY);
+
                     // 顯示錯誤表情
                     if (this.effects) {
-                        this.effects.showEmoji('wrong', this.snake[0].x, this.snake[0].y);
+                        this.effects.showEmoji('wrong', head.x, head.y);
                     }
+                    
+                    // 移除錯誤的食物
+                    this.spawnFoodSystem.removeFood(decoy);
                     
                     // 添加懲罰效果
                     this.isPenalized = true;
@@ -1200,14 +1221,6 @@ class SnakeGame {
                         this.isTransparent = false;
                         document.querySelector('.game-container').classList.remove('transparent-state');
                     }, this.transparentDuration);
-                } else {
-                    // 在無敵狀態下碰到錯誤食物的效果
-                    if (this.effects) {
-                        this.effects.showEmoji('invincible', this.snake[0].x, this.snake[0].y);
-                    }
-                    if (this.audio) {
-                        this.audio.playSound('invincible');
-                    }
                 }
             }
         });
@@ -1215,19 +1228,23 @@ class SnakeGame {
 
     // 修改蛇身碰撞檢測
     checkCollision(head) {
+        // 縮小碰撞區域為原來的 60%
+        const collisionSize = this.pixelSize * 0.6;
+        const offset = (this.pixelSize - collisionSize) / 2;
+
         const headArea = {
-            x: head.x,
-            y: head.y,
-            width: this.pixelSize,
-            height: this.pixelSize
+            x: head.x + offset,
+            y: head.y + offset,
+            width: collisionSize,
+            height: collisionSize
         };
 
         return this.snake.some(segment => {
             const segmentArea = {
-                x: segment.x,
-                y: segment.y,
-                width: this.pixelSize,
-                height: this.pixelSize
+                x: segment.x + offset,
+                y: segment.y + offset,
+                width: collisionSize,
+                height: collisionSize
             };
             return Collider2D.boxCollision(headArea, segmentArea);
         });
@@ -1324,6 +1341,11 @@ class SnakeGame {
         
         // 更新排行榜顯示
         this.updateRankingData('score');
+
+        // 隱藏虛擬搖桿
+        if (this.virtualJoystick) {
+            this.virtualJoystick.hide();
+        }
     }
 
     setupEventListeners() {
@@ -2024,16 +2046,6 @@ class SnakeGame {
         ];
     }
 
-    getTimeRanking() {
-        return [
-            { name: "神速玩家", value: 45, date: "2024/03/20" },
-            { name: "閃電俠", value: 52, date: "2024/03/19" },
-            { name: "急速手", value: 58, date: "2024/03/18" },
-            { name: "穩健派", value: 65, date: "2024/03/17" },
-            { name: "慢慢來", value: 75, date: "2024/03/16" }
-        ];
-    }
-
     // 在遊戲結束時也要確保停止音效
     gameOver() {
         if (this.audio) {
@@ -2117,6 +2129,15 @@ class SnakeGame {
         if (maxComboElement) maxComboElement.textContent = this.stats.maxCombo || 0;
         
         console.log('遊戲統計資料已更新:', this.stats);
+    }
+
+    startGame() {
+        // ... 其他開始遊戲代碼 ...
+        
+        // 顯示虛擬搖桿
+        if (this.virtualJoystick) {
+            this.virtualJoystick.show();
+        }
     }
 
  

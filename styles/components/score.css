@@ -88,5 +88,48 @@
 
 /* 分數動畫效果 */
 .score-jump {
-    animation: scoreJump 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    animation: scoreJump 0.3s ease-in-out;
+}
+
+/* 分數減少的動畫效果 */
+.score-decrease {
+    animation: scoreShake 0.5s ease-in-out;
+    color: #ff3333 !important;
+}
+
+@keyframes scoreShake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-5px); }
+    40%, 80% { transform: translateX(5px); }
+}
+
+/* 扣分彈出效果 */
+.score-popup {
+    position: absolute;
+    pointer-events: none;
+    z-index: 1000;
+    animation: scorePopup 1s ease-out forwards;
+}
+
+.score-popup.penalty {
+    font-family: "Kanit", serif;
+    font-size: 2em;
+    font-weight: bold;
+    color: #ff3333;  /* 扣分顯示紅色 */
+}
+
+@keyframes scorePopup {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+}
+
+@keyframes scoreJump {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
 } 
