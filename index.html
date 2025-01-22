@@ -141,12 +141,12 @@
         <section>
             <h2>遊戲玩法</h2>
             <ul>
-                <li>祝福詞加分：吃下正確的祝福字可得 10分！</li>
-                <li>避開干擾詞：吃到干擾詞，將扣除2分！</li>
+                <li>吃下正確祝福詞加 <span class="score-highlight">10分</span>！吃到干擾詞將扣除 <span class="score-highlight">2分</span>！</li>
+                <li></li>
                 <li>生存挑戰：小蛇不能撞到自己的身體，否則遊戲結束！</li>
-                <li>連擊增長：連續吃對祝福詞，得分更快！</li>
-                <li>無敵模式：吃到星星道具，啟動3秒無敵！</li>
-                <li>時間暫停：吃到時鐘道具，時間倒數暫停3秒！</li>
+                <li>連續吃對祝福詞，得分更快！</li>
+                <li>吃到星星道具，啟動3秒無敵！<img width="50px" src="img/tool-star.png" alt="星星道具">吃到時鐘道具，時間倒數暫停3秒！<img width="50px" src="img/tool-timer.png" alt="時鐘道具"></li>
+                <li></li>
             </ul>
         </section>
 
@@ -165,6 +165,83 @@
     </div>
     <div class="instruction-close-container">
         <button class="btn-style instruction-close">關閉</button>
+    </div>
+    
+
+
+    <!--頁首的排行榜-->
+    <div class="ranking-overlay"></div>
+    <div class="ranking-popup">
+        <div class="ranking-container">
+            <div class="ranking-title">排行榜</div>
+            <div class="ranking-tabs">
+                <button class="tab-btn active" data-tab="score">最高分數</button>
+                <button class="tab-btn" data-tab="combo">最高連擊</button>
+                <button class="tab-btn" data-tab="time">最快通關</button>
+            </div>
+            <div class="ranking-content">
+                <div class="ranking-tab active" id="scoreRanking">
+                    <div class="ranking-list">
+                        <div class="ranking-item">
+                            <span class="rank">1</span>
+                            <span class="player-name">玩家A</span>
+                            <span class="score">2500</span>
+                        </div>
+                        <div class="ranking-item">
+                            <span class="rank">2</span>
+                            <span class="player-name">玩家B</span>
+                            <span class="score">2100</span>
+                        </div>
+                        <div class="ranking-item">
+                            <span class="rank">3</span>
+                            <span class="player-name">玩家C</span>
+                            <span class="score">1800</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="ranking-tab" id="comboRanking">
+                    <div class="ranking-list">
+                        <div class="ranking-item">
+                            <span class="rank">1</span>
+                            <span class="player-name">玩家X</span>
+                            <span class="score">15x</span>
+                        </div>
+                        <div class="ranking-item">
+                            <span class="rank">2</span>
+                            <span class="player-name">玩家Y</span>
+                            <span class="score">12x</span>
+                        </div>
+                        <div class="ranking-item">
+                            <span class="rank">3</span>
+                            <span class="player-name">玩家Z</span>
+                            <span class="score">10x</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="ranking-tab" id="timeRanking">
+                    <div class="ranking-list">
+                        <div class="ranking-item">
+                            <span class="rank">1</span>
+                            <span class="player-name">玩家M</span>
+                            <span class="score">1:30</span>
+                        </div>
+                        <div class="ranking-item">
+                            <span class="rank">2</span>
+                            <span class="player-name">玩家N</span>
+                            <span class="score">1:45</span>
+                        </div>
+                        <div class="ranking-item">
+                            <span class="rank">3</span>
+                            <span class="player-name">玩家O</span>
+                            <span class="score">2:00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="ranking-close-container">
+        <button class="btn-style ranking-close">關閉</button>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>

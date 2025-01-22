@@ -606,6 +606,50 @@ class SnakeGame {
                 closeContainer.classList.remove('active');
             });
         }
+
+        // 添加排行榜按鈕事件
+        const rankingButton = document.getElementById('rankingButton');
+        const rankingPopup = document.querySelector('.ranking-popup');
+        const rankingOverlay = document.querySelector('.ranking-overlay');
+        const rankingCloseButton = document.querySelector('.ranking-close');
+        const rankingCloseContainer = document.querySelector('.ranking-close-container');
+
+        if (rankingButton && rankingPopup && rankingOverlay) {
+            rankingButton.addEventListener('click', () => {
+                rankingPopup.classList.add('active');
+                rankingOverlay.classList.add('active');
+                rankingCloseContainer.classList.add('active');
+                // 更新排行榜數據
+                this.updateRankingData('score');
+            });
+
+            // 關閉按鈕事件
+            rankingCloseButton.addEventListener('click', () => {
+                rankingPopup.classList.remove('active');
+                rankingOverlay.classList.remove('active');
+                rankingCloseContainer.classList.remove('active');
+            });
+
+            // 點擊遮罩層關閉
+            rankingOverlay.addEventListener('click', () => {
+                rankingPopup.classList.remove('active');
+                rankingOverlay.classList.remove('active');
+                rankingCloseContainer.classList.remove('active');
+            });
+
+            // 排行榜標籤切換
+            const tabButtons = rankingPopup.querySelectorAll('.tab-btn');
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabType = button.dataset.tab;
+                    this.updateRankingData(tabType);
+                    
+                    // 更新標籤狀態
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                });
+            });
+        }
     }
 
     initConfettiSystem() {
