@@ -620,7 +620,7 @@ class SnakeGame {
 
         if (rankingButton && rankingPopup && rankingOverlay) {
             rankingButton.addEventListener('click', () => {
-                rankingPopup.classList.add('active');
+                rankingPopup.classList.add('active', 'index-active');  // 添加 index-active
                 rankingOverlay.classList.add('active');
                 rankingCloseContainer.classList.add('active');
                 // 更新排行榜數據
@@ -629,14 +629,14 @@ class SnakeGame {
 
             // 關閉按鈕事件
             rankingCloseButton.addEventListener('click', () => {
-                rankingPopup.classList.remove('active');
+                rankingPopup.classList.remove('active', 'index-active');  // 移除 index-active
                 rankingOverlay.classList.remove('active');
                 rankingCloseContainer.classList.remove('active');
             });
 
             // 點擊遮罩層關閉
             rankingOverlay.addEventListener('click', () => {
-                rankingPopup.classList.remove('active');
+                rankingPopup.classList.remove('active', 'index-active');  // 移除 index-active
                 rankingOverlay.classList.remove('active');
                 rankingCloseContainer.classList.remove('active');
             });
@@ -784,6 +784,10 @@ class SnakeGame {
 
         const collectedWords = document.querySelector('.collected-words');
         collectedWords.classList.add('changing');
+
+        // 隨機選擇一個索引
+        const randomIndex = Math.floor(Math.random() * this.greetingsData.length);
+        this.currentGreetingIndex = randomIndex;
         
         // 更新當前詞組和錯誤詞組
         const greeting = this.greetingsData[this.currentGreetingIndex];
@@ -792,7 +796,7 @@ class SnakeGame {
         // 使用 CollectWordSystem 設置新的詞組
         this.collectWordSystem.setNewWords(greeting.words);
         // 保存當前詞組的引用，用於食物生成
-        this.currentWords = greeting.words;  // 添加這行
+        this.currentWords = greeting.words;
         
         // 重新設置畫布大小
         this.setupCanvasSize();
