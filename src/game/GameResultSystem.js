@@ -134,7 +134,7 @@ export class GameResultSystem {
             anime({
                 targets: finalScoreElement,
                 innerHTML: [0, totalScore],
-                duration: 2000,
+                duration: 100,
                 round: 1,
                 easing: 'easeOutExpo'
             });
@@ -173,27 +173,14 @@ export class GameResultSystem {
         // 更新統計數據
         const stats = {
             totalCollected: this.resultElement.querySelector('#totalCollected'),
-            perfectCollects: this.resultElement.querySelector('#perfectCollects'),
-            maxCombo: this.resultElement.querySelector('#maxCombo'),
-            bonusesList: this.resultElement.querySelector('#bonusesList')
+            maxCombo: this.resultElement.querySelector('#maxCombo')
         };
 
         if (stats.totalCollected) stats.totalCollected.textContent = this.game.stats.totalCollected;
-        if (stats.perfectCollects) stats.perfectCollects.textContent = this.game.stats.perfectCollects;
         if (stats.maxCombo) stats.maxCombo.textContent = this.game.comboSystem.getMaxCombo();
 
         // 計算最終分數和獎勵
         const { finalScore, bonuses } = this.game.calculateFinalScore();
-
-        // 更新獎勵列表
-        if (stats.bonusesList) {
-            stats.bonusesList.innerHTML = bonuses.map(bonus => `
-                <div class="bonus-item">
-                    <span>${bonus.text}</span>
-                    <span>+${bonus.points}</span>
-                </div>
-            `).join('');
-        }
         
         // 強制重繪
         void this.resultElement.offsetWidth;

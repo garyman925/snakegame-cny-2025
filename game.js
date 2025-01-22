@@ -1164,7 +1164,6 @@ class SnakeGame {
                         this.confettiSystem.celebrate();
                     }
                     
-                    this.collectWordSystem.completedGreetings.push(this.currentWords.join(''));
                     this.collectWordSystem.showCompletionAnimation(this.currentWords);
                     
                     this.currentGreetingIndex++;

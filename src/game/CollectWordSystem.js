@@ -65,10 +65,35 @@ export class CollectWordSystem {
 
     // 檢查是否完成當前詞組
     isCurrentWordComplete() {
-        return this.collectedWordsElements.every(element => {
+        const isComplete = this.collectedWordsElements.every(element => {
             const span = element.querySelector('span');
             return span && span.textContent;
         });
+
+        // 如果完成了一組字
+        if (isComplete) {
+            const completedWords = this.collectedWordsElements.map(element => {
+                const span = element.querySelector('span');
+                return span ? span.textContent : '';
+            });
+            
+            // 添加到完成列表
+            this.completedGreetings.push(completedWords.join(''));
+            
+            // 輸出當前完成列表的內容
+            console.log('完成的祝福詞列表:', {
+                新增的字組: completedWords.join(''),
+                目前所有字組: this.completedGreetings,
+                總數: this.completedGreetings.length
+            });
+            
+            // 更新 game 的統計數據
+            if (this.game.stats) {
+                this.game.stats.totalCollected = this.completedGreetings.length;
+            }
+        }
+
+        return isComplete;
     }
 
     // 處理完成詞組的動畫

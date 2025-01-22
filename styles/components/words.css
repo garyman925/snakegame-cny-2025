@@ -2,7 +2,7 @@
 .collected-words {
     position: fixed;
     left: 50px;
-    top: 25%;
+    top: 210px;
     transform: translateY(-50%);
     display: flex;
     flex-direction: column;

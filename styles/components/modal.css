@@ -9,6 +9,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    border: 10px solid orange;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
     z-index: 1000;
     display: flex;
@@ -35,7 +36,7 @@
     display: flex;
     flex-direction: row;
     gap: 10px;
-    justify-content: start;
+    justify-content: center;
     align-items: start;
 }
 
@@ -375,9 +376,9 @@
 }
 
 .ranking-container {
+    flex: 2 !important;
     transition: all 0.3s ease;
     opacity: 1;
-    transform: translateY(20px);
 }
 
 @media screen and (max-width: 768px) {
