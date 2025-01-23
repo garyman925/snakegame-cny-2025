@@ -14,6 +14,12 @@ export class SpawnFoodSystem {
 
     // 生成所有食物（包括正確和誘餌食物）
     spawnFood() {
+        // 添加日誌追蹤
+        console.log('開始生成食物:', {
+            當前題目: this.game.currentWords,
+            錯誤詞組: this.game.wrongWords
+        });
+
         // 清除現有的食物
         this.correctFoods = [];
         this.decoyFoods = [];
@@ -83,8 +89,15 @@ export class SpawnFoodSystem {
             }
         }
 
-        // 從錯誤詞組中隨機選擇4個不重複的字
+        // 從錯誤詞組中選擇字時添加檢查
         const wrongWords = [...this.game.wrongWords];
+        if (wrongWords.length < this.numberOfDecoys) {
+            console.warn('警告：錯誤詞組數量不足', {
+                需要數量: this.numberOfDecoys,
+                實際數量: wrongWords.length
+            });
+        }
+
         const selectedWrongWords = [];
         const numberOfDecoys = 4; // 固定生成4個錯誤字
 
@@ -246,45 +259,34 @@ export class SpawnFoodSystem {
         if (!food) return;
 
         const ctx = this.game.ctx;
-        const animation = this.getFoodAnimation(food);
+        // const animation = this.getFoodAnimation(food);  // 移除動畫
         
         ctx.save();
         
         // 繪製食物外框和背景
         ctx.fillStyle = '#4CAF50';  // 綠色背景
         ctx.strokeStyle = '#388E3C';  // 深綠色邊框
-        this.drawFoodShape(ctx, food, animation);
         
-        // 繪製文字
-        this.drawFoodText(ctx, food, animation);
-        
-        ctx.restore();
-    }
-
-    drawFoodShape(ctx, food, animation) {
-        const size = this.game.pixelSize;  // 使用與蛇相同的大小
-        const x = food.x + (animation ? animation.offsetX : 0);
-        const y = food.y + (animation ? animation.offsetY : 0);
+        // 直接使用食物的原始位置，不加入動畫偏移
+        const x = food.x;
+        const y = food.y;
         
         // 調整圓角大小，使其更接近蛇的視覺效果
-        const borderRadius = 5;  // 可以調整這個值來改變圓角程度
+        const borderRadius = 5;
         
         ctx.beginPath();
-        ctx.roundRect(x, y, size, size, borderRadius);
+        ctx.roundRect(x, y, food.size, food.size, borderRadius);
         ctx.fill();
         ctx.stroke();
-    }
-
-    drawFoodText(ctx, food, animation) {
-        const size = this.game.pixelSize;  // 使用與蛇相同的大小
-        const x = food.x + (animation ? animation.offsetX : 0);
-        const y = food.y + (animation ? animation.offsetY : 0);
         
+        // 繪製文字
         ctx.fillStyle = '#FFFFFF';  // 白色文字
-        ctx.font = `${size * 0.7}px Arial`;  // 調整字體大小為食物大小的 70%
+        ctx.font = `${food.size * 0.7}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(food.word, x + size/2, y + size/2);
+        ctx.fillText(food.word, x + food.size/2, y + food.size/2);
+        
+        ctx.restore();
     }
 
     // 食物動畫相關方法

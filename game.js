@@ -142,6 +142,7 @@ import('./src/game/GameResultSystem.js')
 import { CollectWordSystem } from './src/game/CollectWordSystem.js';
 import { SpawnFoodSystem } from './src/game/SpawnFoodSystem.js';
 import { VirtualJoystickSystem } from './src/game/VirtualJoystickSystem.js';
+import { RuleSliderSystem } from './src/game/RuleSliderSystem.js';
 
 class SnakeGame {
     constructor() {
@@ -528,8 +529,8 @@ class SnakeGame {
         // 初始化音效系統
         if (AudioSystem) {
             this.audio = new AudioSystem();
-            // 在初始化時就開始播放背景音樂
-            this.audio.playBGM();
+            // 移除這行
+            // this.audio.playBGM();
         }
 
         // 初始化 ComboSystem
@@ -579,6 +580,12 @@ class SnakeGame {
 
         // 初始化虛擬搖桿系統
         this.virtualJoystick = new VirtualJoystickSystem(this);
+
+        // 添加一個屬性來記錄已使用的題目索引
+        this.usedGreetingIndices = new Set();  // 用來記錄已使用的題目索引
+
+        // 初始化規則輪播系統
+        this.ruleSlider = new RuleSliderSystem();
     }
 
     initializeUI() {
@@ -593,22 +600,25 @@ class SnakeGame {
             settingButton.addEventListener('click', () => {
                 instructionPopup.classList.add('active');
                 instructionOverlay.classList.add('active');
-                closeContainer.classList.add('active');
+                closeContainer.classList.add('active');  // 添加 active 類
             });
 
             // 關閉按鈕事件
             closeButton.addEventListener('click', () => {
                 instructionPopup.classList.remove('active');
                 instructionOverlay.classList.remove('active');
-                closeContainer.classList.remove('active');
+                closeContainer.classList.remove('active');  // 移除 active 類
             });
 
             // 點擊遮罩層關閉
             instructionOverlay.addEventListener('click', () => {
                 instructionPopup.classList.remove('active');
                 instructionOverlay.classList.remove('active');
-                closeContainer.classList.remove('active');
+                closeContainer.classList.remove('active');  // 移除 active 類
             });
+
+            // 添加觸控滾動功能到遊戲說明
+            this.enableTouchScroll(instructionPopup);
         }
 
         // 添加排行榜按鈕事件
@@ -654,6 +664,61 @@ class SnakeGame {
                 });
             });
         }
+
+        // 為遊戲結果的排行榜添加觸控滾動
+        const gameResultRanking = document.querySelector('#gameResult .ranking-content');
+        if (gameResultRanking) {
+            this.enableTouchScroll(gameResultRanking);
+        }
+
+        // 為頁首排行榜添加觸控滾動
+        const headerRanking = document.querySelector('.ranking-popup .ranking-content');
+        if (headerRanking) {
+            this.enableTouchScroll(headerRanking);
+        }
+    }
+
+    // 優化觸控滾動方法
+    enableTouchScroll(element) {
+        let startY;
+        let startScrollTop;
+        let isTouching = false;
+
+        element.addEventListener('touchstart', (e) => {
+            // 只有當元素可以滾動時才阻止默認行為
+            if (element.scrollHeight > element.clientHeight) {
+                isTouching = true;
+                startY = e.touches[0].pageY;
+                startScrollTop = element.scrollTop;
+                
+                // 防止觸控時的回彈效果
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        element.addEventListener('touchmove', (e) => {
+            if (!isTouching) return;
+            
+            const touch = e.touches[0];
+            const deltaY = startY - touch.pageY;
+            
+            // 檢查是否到達滾動邊界
+            if ((element.scrollTop === 0 && deltaY < 0) || 
+                (element.scrollTop + element.clientHeight === element.scrollHeight && deltaY > 0)) {
+                return;
+            }
+            
+            element.scrollTop = startScrollTop + deltaY;
+            e.preventDefault();
+        }, { passive: false });
+
+        element.addEventListener('touchend', () => {
+            isTouching = false;
+        });
+
+        element.addEventListener('touchcancel', () => {
+            isTouching = false;
+        });
     }
 
     initConfettiSystem() {
@@ -766,6 +831,15 @@ class SnakeGame {
                         if (this.virtualJoystick) {
                             this.virtualJoystick.show();
                         }
+
+                        // 開始播放背景音樂
+                        if (this.audio) {
+                            this.audio.playBGM();  // 在遊戲開始時播放背景音樂
+                            this.audio.playSound('crash');
+                            setTimeout(() => {
+                                this.audio.playSound('crash');
+                            }, 200);
+                        }
                     });
                 } catch (error) {
                     console.error('遊戲初始化失敗:', error);
@@ -784,9 +858,11 @@ class SnakeGame {
 
         const collectedWords = document.querySelector('.collected-words');
         collectedWords.classList.add('changing');
-
-        // 隨機選擇一個索引
+        
+        // 直接隨機選擇一個題目索引，不考慮是否重複
         const randomIndex = Math.floor(Math.random() * this.greetingsData.length);
+        
+        // 更新當前索引
         this.currentGreetingIndex = randomIndex;
         
         // 更新當前詞組和錯誤詞組
@@ -795,7 +871,6 @@ class SnakeGame {
         
         // 使用 CollectWordSystem 設置新的詞組
         this.collectWordSystem.setNewWords(greeting.words);
-        // 保存當前詞組的引用，用於食物生成
         this.currentWords = greeting.words;
         
         // 重新設置畫布大小
@@ -812,7 +887,7 @@ class SnakeGame {
 
         if (isInitial) {
             this.setupCanvasSize();
-            this.spawnFoodSystem.spawnFood();  // 確保初始化時也生成食物
+            this.spawnFoodSystem.spawnFood();
         }
 
         // 重置道具系統的計數
@@ -1137,6 +1212,11 @@ class SnakeGame {
             if (Collider2D.boxCollision(headRect, foodRect)) {  // 使用 headRect
                 food.collected = true;
 
+                // 播放收集音效
+                if (this.audio) {
+                    this.audio.playSound('collect');  // 添加這行
+                }
+
                 // 顯示正確表情
                 if (this.effects) {
                     this.effects.showEmoji('correct', head.x, head.y);
@@ -1170,13 +1250,14 @@ class SnakeGame {
                     
                     this.collectWordSystem.showCompletionAnimation(this.currentWords);
                     
-                    this.currentGreetingIndex++;
+                    // 移除 currentGreetingIndex 的累加和檢查
+                    // this.currentGreetingIndex++;
+                    // if (this.currentGreetingIndex >= this.greetingsData.length) {
+                    //     this.gameOver();
+                    //     return;
+                    // }
                     
-                    if (this.currentGreetingIndex >= this.greetingsData.length) {
-                        this.gameOver();
-                        return;
-                    }
-                    
+                    // 直接選擇新題目
                     this.selectNextGreeting();
                 }
             }
@@ -1534,28 +1615,33 @@ class SnakeGame {
 
     // 新增：增加蛇的長度的方法
     growSnake() {
-        // 獲取蛇尾的最後兩個段落
-        const lastSegment = this.snake[this.snake.length - 1];
-        const secondLastSegment = this.snake[this.snake.length - 2];
-
-        // 計算新段落的位置（在最後兩個段落的延長線上）
-        const newSegment = {
-            x: lastSegment.x + (lastSegment.x - secondLastSegment.x),
-            y: lastSegment.y + (lastSegment.y - secondLastSegment.y)
-        };
-
-        // 如果新段落超出邊界，進行調整
-        if (newSegment.x < 0) newSegment.x = this.canvas.width - this.pixelSize;
-        if (newSegment.x >= this.canvas.width) newSegment.x = 0;
-        if (newSegment.y < 0) newSegment.y = this.canvas.height - this.pixelSize;
-        if (newSegment.y >= this.canvas.height) newSegment.y = 0;
-
-        // 添加新段落到蛇身
-        this.snake.push(newSegment);
+        // 設定每次增長的段落數量
+        const growthAmount = 2;  // 改為 2 個段落（原本是 1 個）
         
-        // 更新 lastPosition 數組以包含新段落
-        if (this.lastPosition) {
-            this.lastPosition.push({...newSegment});
+        for (let i = 0; i < growthAmount; i++) {
+            // 獲取蛇尾的最後兩個段落
+            const lastSegment = this.snake[this.snake.length - 1];
+            const secondLastSegment = this.snake[this.snake.length - 2];
+
+            // 計算新段落的位置（在最後兩個段落的延長線上）
+            const newSegment = {
+                x: lastSegment.x + (lastSegment.x - secondLastSegment.x),
+                y: lastSegment.y + (lastSegment.y - secondLastSegment.y)
+            };
+
+            // 如果新段落超出邊界，進行調整
+            if (newSegment.x < 0) newSegment.x = this.canvas.width - this.pixelSize;
+            if (newSegment.x >= this.canvas.width) newSegment.x = 0;
+            if (newSegment.y < 0) newSegment.y = this.canvas.height - this.pixelSize;
+            if (newSegment.y >= this.canvas.height) newSegment.y = 0;
+
+            // 添加新段落到蛇身
+            this.snake.push(newSegment);
+            
+            // 更新 lastPosition 數組以包含新段落
+            if (this.lastPosition) {
+                this.lastPosition.push({...newSegment});
+            }
         }
     }
 
@@ -2132,6 +2218,7 @@ class SnakeGame {
         if (maxComboElement) maxComboElement.textContent = this.stats.maxCombo || 0;
         
         console.log('遊戲統計資料已更新:', this.stats);
+        console.log('遊戲結束，最終分數:', this.score);
     }
 
     startGame() {

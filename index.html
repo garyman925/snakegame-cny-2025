@@ -127,41 +127,75 @@
     </div>
 
     <div class="instruction-overlay"></div>
+    
     <div class="instruction-popup">
-        <h1>遊戲規則</h1>
-        <section>
-            <h2>每日挑戰機會</h2>
-            <ul>
-                <li>每日登入即玩：每日登入平台即可獲得一次挑戰機會！</li>
-                <li>完成練習再加碼：準時完成當天練習，可獲得額外一次挑戰機會，讓你賺更多分！</li>
-            </ul>
-        </section>
+        <h1>賀歲蛇吞吞遊戲玩法</h1>
+        
+        <!-- 導航按鈕移到這裡 -->
+        <button class="slide-nav prev">
+            <span class="nav-icon">←</span>
+        </button>
+        <button class="slide-nav next">
+            <span class="nav-icon">→</span>
+        </button>
+        
+        <div class="rule-slider">
+            <div class="rule-slides">
+                
+                <!-- 第二個 slide：遊戲玩法 -->
+                <div class="rule-slide">
+                    <section class="rule-section">
+                        
+                        <div class="section-content">
+                            <h2>每日挑戰機會</h2>
+                            <ul>
+                                <li>每日登入即玩：活動期間，每日登入平台即可獲得一次挑戰機會！</li>
+                                <li>完成練習再加碼：準時完成當天練習，可獲得額外一次挑戰機會，讓你賺更多分！</li>
+                            </ul>
 
-        <section>
-            <h2>遊戲玩法</h2>
-            <ul>
-                <li>吃下正確祝福詞加 <span class="score-highlight">10分</span>！吃到干擾詞將扣除 <span class="score-highlight">5分</span>！</li>
-                <li>生存挑戰：小蛇不能撞到自己的身體，否則遊戲結束！</li>
-                <li>連續吃對祝福詞，得分更快！</li>
-                <li>吃到星星道具，啟動3秒無敵！<img width="50px" src="img/tool-star.png" alt="星星道具">吃到時鐘道具，時間倒數暫停3秒！<img width="50px" src="img/tool-timer.png" alt="時鐘道具"></li>
-            </ul>
-        </section>
+                            <h2>遊戲玩法</h2>
+                            <ul>
+                                <li>祝福詞加分：遊戲畫面左上方有一個特定的新年祝福詞，例如「恭喜發財」，操控小蛇吃下正確的祝福字可得 10分！順序隨意，對了就得分！</li>
+                                <li>避開干擾詞：吃到干擾詞，將扣除 2分 ！</li>
+                                <li>生存挑戰：小蛇不能撞到自己的身體，否則遊戲立即結束並結算分數！</li>
+                                <li>連擊增長：連續吃對祝福詞，連擊數（Combo）增加，得分更快！</li>
+                                <li>無敵模式：吃到星星道具，啟動3秒無敵，安安心心吞祝福，無懼干擾！</li>
+                                <li>時間暫停：吃到時鐘道具，時間倒數暫停3秒，讓你有更多時間思考路線！</li>
+                            </ul>
 
-        <section>
-            <h2>金幣兌換與上限</h2>
-            <ul>
-                <li>金幣獲取：每10分可兌換1個金幣！</li>
-                <li>每日上限：每天最多可賺取100個金幣！</li>
-            </ul>
-        </section>
+                            <h2>金幣兌換與上限</h2>
+                            <ul> 
+                                <li>金幣獲取：每10分可兌換1個金幣！</li>
+                                <li>每日上限：每天最多可賺取100個金幣，挑戰你的極限！</li>
+                            </ul>
+                            <h2>遊戲操作</h2>
+                            <ul>
+                                <li>電腦版：用鍵盤的上下左右方向按鍵操控小蛇改變前進方向。</li>
+                                <li>手機及平板版：用虛擬鍵盤按上下左右操控小蛇改變前進方向。</li>
+                            </ul>
+                        
+                        </div>
 
-        <section>
-            <h2>排行榜挑戰</h2>
-            <p>查看「蛇吞吞排行榜」，看看你吞下了多少祝福詞、賺了多少金幣，與其他玩家一較高下，奪取榜首！</p>
-        </section>
+                    </section>
+                </div>
+
+            </div>
+            
+            <!-- 指示器保留在 slider 內 -->
+            <div class="slide-indicators">
+                <span class="indicator active"></span>
+                <span class="indicator"></span>
+                <span class="indicator"></span>
+                <span class="indicator"></span>
+            </div>
+        </div>
     </div>
+
     <div class="instruction-close-container">
-        <button class="btn-style instruction-close">關閉</button>
+        <button class="btn-style instruction-close">
+            <span class="close-text">關閉</span>
+            <span class="close-icon">×</span>
+        </button>
     </div>
     
 

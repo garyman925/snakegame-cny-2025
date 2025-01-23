@@ -30,7 +30,7 @@ export class AudioSystem {
         }
     }
 
-    startComboSound() {
+    startComboSound() { 
         if (this.isComboPlaying) {
             this.sounds.combo.stop();
         }
@@ -46,8 +46,19 @@ export class AudioSystem {
     }
 
     playBGM() {
-        if (!this.bgm.playing()) {
-            this.bgm.play();
+        try {
+            if (!this.bgm.playing()) {
+                const playPromise = this.bgm.play();
+                
+                // 處理播放承諾
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.warn('背景音樂播放失敗:', error);
+                    });
+                }
+            }
+        } catch (error) {
+            console.warn('嘗試播放背景音樂時出錯:', error);
         }
     }
 

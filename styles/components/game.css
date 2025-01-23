@@ -79,7 +79,8 @@
 }
 
 #startButton {
-    font-size: 1.5em;
+    font-size: 2em !important;
+    font-weight: 900;
     background-color: #b1002c;
     color: white;
     border: 4px solid #ffdd00;
@@ -89,7 +90,7 @@
 }
 
 .btn-style {
-    padding: 6px 40px;
+    padding: 10px 50px;
     font-size: 1.5em !important;
     line-height: 1.2;
     background-color: #ff0000;
@@ -102,8 +103,8 @@
 
 
 .remaining-times {
-    font-size: 1.5em;
-    font-weight: bold;
+    font-size: 20px;
+    font-weight: normal;
     color: #fff;
 }
 
@@ -144,151 +145,6 @@
     .game-buttons {
         flex-direction: column;
         align-items: center;
-    }
-}
-
-/* 添加彈出視窗樣式 */
-.instruction-popup {
-    display: none;
-    position: fixed;
-    font-size: 1em;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 90%;
-    max-width: 900px;
-    max-height: 80vh;
-    background: #ff3737 ;
-    border: 4px solid #ffdd00;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    z-index: 1000;
-    overflow-y: auto;
-    padding: 20px;
-    overflow: hidden;
-}
- 
-.instruction-popup::before{
-    right: 0;
-    content: '';
-    position: absolute;
-    top: 0px;
-    width: 100%;
-    height: 100%;
-    background: url(../../img/big-snake.png);
-    z-index: -1;
-    opacity: 1;
-    transform: translateX(300px);
-}
-
-.instruction-popup section {
-    margin: 10px 0;
-}
-
-.instruction-popup h1,
-.instruction-popup h2 {
-    color: #fff;
-}
-
-.instruction-popup ul {
-    color: #fff;
-}
-
-.instruction-popup ul li {
-    list-style: none;
-    margin: 0px 0;
-}
-
-.instruction-popup p {
-    color: #fff;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.score-highlight {
-    font-size: 2em;
-    font-weight: bold;
-}
-
-.instruction-close-container {
-    width: 100%;
-    height: 100px;
-    position: fixed;
-    left: 0;
-    right: 0;
-    margin: auto;
-    bottom: -20px;
-    z-index: 1001;
-    display: none;
-}
-
-@media (max-width: 768px) {
-    .instruction-close-container {
-        bottom: 3%;
-        font-size: 0.85rem;
-    }
-}
-
-.instruction-close-container.active {
-    display: block;
-}
-
-.instruction-popup.active {
-    display: block;
-    animation: popupFadeIn 0.3s ease;
-}
-
-.instruction-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 999;
-}
-
-.instruction-overlay.active {
-    display: block;
-}
-
-.instruction-close {
-position: absolute;
-    top: 0;
-    right: 0;
-    left: 0;
-    width: 200px;
-    margin: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s;
-}
-
-.instruction-close:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-}
-
-@keyframes popupFadeIn {
-    from {
-        opacity: 0;
-        transform: translate(-50%, -48%);
-    }
-    to {
-        opacity: 1;
-        transform: translate(-50%, -50%);
-    }
-}
-
-/* 適配手機版 */
-@media (max-width: 768px) {
-    .instruction-popup {
-        width: 95%;
-        max-height: 85vh;
-        padding: 15px;
-        overflow: auto;
-        height: 560px;
-        font-size: 0.85rem;
     }
 }
 

@@ -1,0 +1,440 @@
+/* 添加彈出視窗樣式 */
+.instruction-popup {
+    display: none;
+    position: fixed;
+    font-size: 1em;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    height: 680px;
+    max-width: 800px;
+    background: #eeeeee;
+    border: 4px solid #ffdd00;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    padding: 20px;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+}
+
+.instruction-popup::before {
+    right: 0;
+    content: '';
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: url(../../img/big-snake.png);
+    z-index: -1;
+    opacity: 1;
+    transform: translateX(300px);
+    pointer-events: none;
+}
+
+.instruction-popup section {
+    margin: 10px 0;
+}
+
+.instruction-popup h1,
+.instruction-popup h2 {
+    color: #ff7900;
+    text-shadow: 1px 1px 0px #00000000;
+}
+
+@media screen and (max-width: 768px) {
+    .instruction-popup h1,
+    .instruction-popup h2 {
+        font-size: 1.5rem;
+    }
+}
+
+@media screen and (max-width: 375px) {
+    .instruction-popup h1{
+        text-align: center;
+    }
+}
+
+.instruction-popup ul {
+    color: #000;
+}
+
+.instruction-popup ul li {
+    list-style: none;
+    margin: 0px 0;
+}
+
+.instruction-popup p {
+    color: #000;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.instruction-popup .rule-section {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.instruction-popup .section-title {
+    flex: 1;
+}
+
+.instruction-popup .section-image {
+    flex: 0 0 200px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.instruction-popup .section-image img {
+    max-width: 100%;
+    height: auto;
+}
+
+.instruction-popup .section-content {
+    flex: 1;
+    margin-bottom: 20px;
+}
+
+.instruction-popup .section-title h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #ff7900;
+    font-size: 1.5em;
+}
+
+.instruction-popup .rule-section ul {
+    margin: 0;
+    padding: 0;
+}
+
+.instruction-popup .rule-section li {
+    line-height: 1.5;
+    position: relative;
+    padding-left: 20px;
+}
+
+.instruction-popup .rule-section li:before {
+    content: "•";
+    color: #ff7900;
+    position: absolute;
+    left: 0;
+}
+
+.rule-container {
+    display: flex;
+    flex-direction: row;
+    align-items: start;
+}
+
+.score-highlight {
+    font-size: 2em;
+    font-weight: bold;
+}
+
+.instruction-close-container {
+    display: none;  /* 預設隱藏 */
+    width: 200px;
+    height: 100px;
+    position: absolute;
+    right: 10%;
+    top: 37px;
+    z-index: 1001;
+}
+
+/* 在小螢幕設備上的樣式 */
+@media (max-width: 768px) {
+    .instruction-close-container {
+        width: 40px;
+        height: 40px;
+        right: 0px;
+        top: 20px;
+        transform: translateX(-85px);
+    }
+
+    .instruction-close {
+        width: 40px;
+        height: 40px;
+        padding: 0;  /* 移除內邊距 */
+    }
+
+    .instruction-close .close-text {
+        display: none;  /* 隱藏文字 */
+    }
+
+    .instruction-close .close-icon {
+        display: block;  /* 顯示 X 圖示 */
+        font-size: 24px;
+        line-height: 1;
+    }
+
+    .instruction-popup {
+        height: 80vh;
+        padding: 15px;
+        overflow-y: scroll;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        touch-action: pan-y;
+    }
+
+    .rule-section {
+        height: auto;
+        min-height: unset;
+        overflow: visible;
+    }
+}
+
+/* 大螢幕時只顯示文字 */
+.instruction-close .close-icon {
+     display: block;  /* 顯示 X 圖示 */
+        font-size: 24px;
+        line-height: 1;
+}
+
+/* 當 instruction-popup 顯示時，才顯示關閉按鈕容器 */
+.instruction-popup.active + .instruction-close-container,
+.instruction-popup.active ~ .instruction-close-container {
+    display: block;
+}
+
+/* 或者使用這種方式 */
+.instruction-close-container.active {
+    display: block;
+}
+
+.instruction-popup.active {
+    display: block;
+    animation: popupFadeIn 0.3s ease;
+    transform: translate(-50%, -50%);
+}
+
+.instruction-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+.instruction-overlay.active {
+    display: block;
+}
+
+.instruction-close {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    width: 200px;
+    margin: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+@media screen and (max-width: 768px) {
+    .instruction-close {
+        width: 100px;
+    }
+}
+
+.instruction-close:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+@keyframes popupFadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -48%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+/* 適配手機版 */
+@media (max-width: 768px) {
+    .instruction-popup {
+        width: 85%;
+        padding: 15px;
+    }
+    
+    .slide-nav {
+        padding: 10px;
+    }
+    
+    .nav-icon {
+        font-size: 1em;
+    }
+    
+    .indicator {
+        width: 8px;
+        height: 8px;
+    }
+    
+    .rule-section {
+        height: auto;
+        padding: 0px 10px;
+        flex-direction: column;
+    }
+    
+    .section-image {
+        height: 150px;
+        margin-bottom: 20px;
+    }
+
+    .section-content {
+        padding-left: 0;
+    }
+
+    .section-title h2 {
+        font-size: 1.3em;
+        text-align: center;
+    }
+}
+
+@media screen and (max-width: 375px) {
+    .instruction-popup {
+        padding: 0;
+        height: 80%;
+    }
+    
+}
+
+/* 輪播容器 */
+.rule-slider {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    margin: 20px 0;
+    padding: 0 20px;
+    padding-bottom: 40px;
+}
+
+@media screen and (max-width: 768px) {
+    .rule-slider {
+        width: 100%;
+        padding: 0;
+        margin: 0;
+    }
+}
+
+.rule-slides {
+    display: flex;
+    transition: transform 0.3s ease;
+    width: 100%;
+}
+
+@media screen and (max-width: 375px) {
+    .rule-slides {
+        font-size: 0.85rem;
+    }
+}
+
+.rule-slide {
+    flex: 0 0 100%;
+    min-width: 100%;
+    transition: opacity 0.3s ease;
+    opacity: 0;
+    height: auto;
+}
+
+.rule-slide.active {
+    opacity: 1;
+}
+
+/* 導航按鈕 */
+.slide-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%) scale(0.9);
+    background: rgba(255, 178, 89, 0.8);
+    border: none;
+    padding: 15px;
+    cursor: pointer;
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    z-index: 2;
+    opacity: 0.7;
+}
+
+.slide-nav:hover {
+    transform: translateY(-50%) scale(1);
+    opacity: 1;
+}
+
+.slide-nav.prev {
+    left: -25px;
+}
+
+.slide-nav.next {
+    right: -25px;
+}
+
+.nav-icon {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #000;
+}
+
+/* 指示器 */
+.slide-indicators {
+    display: none !important; 
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 2;
+}
+
+.indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.indicator.active {
+    background: #ff7900;
+}
+
+/* 移動端適配 */
+@media (max-width: 768px) {
+    .slide-nav {
+        padding: 10px;
+    }
+    
+    .slide-nav.prev {
+        left: -15px;
+    }
+    
+    .slide-nav.next {
+        right: -15px;
+    }
+}
+
+.section-content h2 {
+    margin: 0px 0 10px;
+}
+
+.section-content ul {
+    margin-bottom: 20px;
+}

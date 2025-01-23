@@ -70,21 +70,26 @@ export class CollectWordSystem {
             return span && span.textContent;
         });
 
-        // 如果完成了一組字
+        // 添加日誌追蹤
+        console.log('檢查當前題目完成狀態:', {
+            是否完成: isComplete,
+            當前收集文字: this.collectedWordsElements.map(el => 
+                el.querySelector('span')?.textContent || '').join('')
+        });
+
         if (isComplete) {
             const completedWords = this.collectedWordsElements.map(element => {
                 const span = element.querySelector('span');
                 return span ? span.textContent : '';
             });
             
-            // 添加到完成列表
             this.completedGreetings.push(completedWords.join(''));
             
-            // 輸出當前完成列表的內容
-            console.log('完成的祝福詞列表:', {
-                新增的字組: completedWords.join(''),
-                目前所有字組: this.completedGreetings,
-                總數: this.completedGreetings.length
+            // 記錄完成題目的情況
+            console.log('完成題目:', {
+                完成的題目: completedWords.join(''),
+                已完成題目數: this.completedGreetings.length,
+                總題目數: this.game.greetingsData.length
             });
             
             // 更新 game 的統計數據

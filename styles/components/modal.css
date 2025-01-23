@@ -202,6 +202,12 @@
     transition: all 0.3s ease;
 }
 
+@media screen and (max-width: 768px) {
+    .tab-btn {
+        font-size: 1rem;
+    }
+}
+
 .tab-btn.active {
     background: #45c8f1;
     color: white;
