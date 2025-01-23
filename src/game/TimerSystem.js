@@ -1,7 +1,7 @@
 export class TimerSystem {
     constructor(game) {
         this.game = game;
-        this.gameDuration = 10; // 遊戲時長（秒）
+        this.gameDuration = 240; // 遊戲時長（秒）
         this.endTime = 0; // 遊戲結束時間點
         this.remainingTime = this.gameDuration;
         this.timer = null;

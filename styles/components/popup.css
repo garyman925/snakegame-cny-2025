@@ -171,7 +171,7 @@
     }
 
     .instruction-close .close-icon {
-        display: block;  /* 顯示 X 圖示 */
+        display: block !important;  /* 顯示 X 圖示 */
         font-size: 24px;
         line-height: 1;
     }
@@ -194,9 +194,9 @@
 
 /* 大螢幕時只顯示文字 */
 .instruction-close .close-icon {
-     display: block;  /* 顯示 X 圖示 */
-        font-size: 24px;
-        line-height: 1;
+    display: none;  /* 顯示 X 圖示 */
+    font-size: 24px;
+    line-height: 1;
 }
 
 /* 當 instruction-popup 顯示時，才顯示關閉按鈕容器 */
