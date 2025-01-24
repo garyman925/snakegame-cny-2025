@@ -2197,7 +2197,7 @@ class SnakeGame {
 
     // 添加更新遊戲統計資料的方法
     updateGameStats() {
-        // 更新最終統計資料
+        // 現有的統計資料更新...
         this.stats = {
             ...this.stats,
             finalScore: this.score,
@@ -2206,16 +2206,19 @@ class SnakeGame {
             gameTime: Math.floor((Date.now() - this.startTime) / 1000)
         };
         
+        
         // 更新 UI 顯示
         const finalScoreElement = document.getElementById('finalScore');
         const totalCollectedElement = document.getElementById('totalCollected');
         const perfectCollectsElement = document.getElementById('perfectCollects');
         const maxComboElement = document.getElementById('maxCombo');
+
         
         if (finalScoreElement) finalScoreElement.textContent = this.score;
         if (totalCollectedElement) totalCollectedElement.textContent = this.stats.totalCollected || 0;
         if (perfectCollectsElement) perfectCollectsElement.textContent = this.stats.perfectCollects || 0;
         if (maxComboElement) maxComboElement.textContent = this.stats.maxCombo || 0;
+        
         
         console.log('遊戲統計資料已更新:', this.stats);
         console.log('遊戲結束，最終分數:', this.score);

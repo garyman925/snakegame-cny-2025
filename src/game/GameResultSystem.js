@@ -129,6 +129,42 @@ export class GameResultSystem {
         const finalScoreElement = document.getElementById('finalScore');
         const totalScore = this.game.scoreSystem.score; // 從 ScoreSystem 獲取分數
         
+        // 計算金幣
+        const coinDisplay = this.resultElement.querySelector('#totalCoins');
+        const coins = Math.floor(totalScore / 10);
+        const maxCoins = 50;
+        const finalCoins = Math.min(Math.max(coins, 0), maxCoins);
+
+        console.log('coins:', finalCoins);
+        console.log('score:', totalScore);
+
+        if (coinDisplay) {
+            coinDisplay.textContent = finalCoins;
+            
+            // 處理超出上限提示
+            let warningElement = document.querySelector('.coins-limit-warning');
+            const coinsExchange = finalScoreElement.closest('.coins-exchange');
+            
+            // 如果警告元素不存在，創建並添加到 DOM
+            if (!warningElement && coinsExchange) {
+                const warning = document.createElement('div');
+                warning.className = 'coins-limit-warning';
+                warning.textContent = '你已超出上限';
+                coinsExchange.appendChild(warning);
+                // 重新獲取添加到 DOM 後的元素
+                warningElement = document.querySelector('.coins-limit-warning');
+            }
+            
+            // 確保元素存在後再操作 classList
+            if (warningElement) {
+                if (coins > maxCoins) {
+                    warningElement.classList.add('show');
+                } else {
+                    warningElement.classList.remove('show');
+                }
+            }
+        }
+
         // 先更新 finalScore
         if (finalScoreElement) {
             anime({

@@ -8,7 +8,7 @@
         ". up ."
         "left . right"
         ". down .";
-    gap: 15px;
+    gap: 0;
     padding: 15px;
     z-index: 1000;
     background: transparent;

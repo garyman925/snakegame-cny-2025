@@ -146,4 +146,23 @@
 @keyframes scoreJump {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.1); }
+}
+
+.coins-exchange {
+    position: relative;
+}
+
+.coins-limit-warning {
+    color: #ff4444;
+    font-size: 0.8em;
+    position: absolute;
+    bottom: -18px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    display: none;
+}
+
+.coins-limit-warning.show {
+    display: block;
 } 
