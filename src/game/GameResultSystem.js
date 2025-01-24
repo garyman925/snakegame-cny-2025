@@ -134,64 +134,66 @@ export class GameResultSystem {
         const coins = Math.floor(totalScore / 10);
         const maxCoins = 50;
         const finalCoins = Math.min(Math.max(coins, 0), maxCoins);
+        
+        if (finalCoins == maxCoins) {
+            console.log('*你已到兌換戲上限');
+            const warningElement = document.querySelector('.coins-limit-warning');
+            if (warningElement) {
+                warningElement.classList.add('show');
+            } else {
+                
+            }
+        }
 
         console.log('coins:', finalCoins);
         console.log('score:', totalScore);
 
-        if (coinDisplay) {
-            coinDisplay.textContent = finalCoins;
-            
-            // 處理超出上限提示
-            let warningElement = document.querySelector('.coins-limit-warning');
-            const coinsExchange = finalScoreElement.closest('.coins-exchange');
-            
-            // 如果警告元素不存在，創建並添加到 DOM
-            if (!warningElement && coinsExchange) {
-                const warning = document.createElement('div');
-                warning.className = 'coins-limit-warning';
-                warning.textContent = '你已超出上限';
-                coinsExchange.appendChild(warning);
-                // 重新獲取添加到 DOM 後的元素
-                warningElement = document.querySelector('.coins-limit-warning');
-            }
-            
-            // 確保元素存在後再操作 classList
-            if (warningElement) {
-                if (coins > maxCoins) {
-                    warningElement.classList.add('show');
-                } else {
-                    warningElement.classList.remove('show');
-                }
-            }
-        }
-
-        // 先更新 finalScore
-        if (finalScoreElement) {
-            anime({
-                targets: finalScoreElement,
-                innerHTML: [0, totalScore],
-                duration: 100,
-                round: 1,
-                easing: 'easeOutExpo'
-            });
-        }
-
-        // 延遲 1 秒後更新 score-value
+        // 建立動畫序列
         if (scoreDisplay) {
             anime({
                 targets: scoreDisplay,
                 innerHTML: [0, totalScore],
                 duration: 2000,
-                delay: 500,  // 延遲1秒
                 round: 1,
-                easing: 'easeInOutQuart',  // 使用不同的動畫曲線
+                easing: 'easeInOutQuart',
                 update: function(anim) {
-                    // 添加數字跳動效果
                     if (anim.progress > 0 && anim.progress < 100) {
                         scoreDisplay.classList.add('score-jump');
                     } else {
                         scoreDisplay.classList.remove('score-jump');
                     }
+                }
+            }).finished.then(() => {
+                // 播放金幣動畫
+                return anime({
+                    targets: coinDisplay,
+                    innerHTML: [0, finalCoins],
+                    duration: 1500,
+                    round: 1,
+                    easing: 'easeOutExpo'
+                }).finished;
+            }).then(() => {
+                // 播放總收集數動畫
+                return anime({
+                    targets: stats.totalCollected,
+                    innerHTML: [0, this.game.stats.totalCollected || 0],
+                    duration: 1000,
+                    round: 1,
+                    easing: 'easeOutExpo'
+                }).finished;
+            }).then(() => {
+                // 播放最高連擊動畫
+                return anime({
+                    targets: stats.maxCombo,
+                    innerHTML: [0, this.game.comboSystem.getMaxCombo()],
+                    duration: 1000,
+                    round: 1,
+                    easing: 'easeOutExpo'
+                }).finished;
+            }).then(() => {
+                // 最後播放 confetti 效果
+                if (this.game.confettiSystem) {
+                    this.game.confettiSystem.playEndGameEffect();
                 }
             });
         }

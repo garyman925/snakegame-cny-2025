@@ -18,38 +18,8 @@ export class EffectSystem {
         this.emojis.speed.src = 'img/emo-smart.png';
         this.emojis.star.src = 'img/emo-star.png';
 
-        // 暫時註釋掉粒子系統的初始化，直到我們確保它可以正常工作
-        // this.initParticleSystem();
     }
 
-    // 暫時註釋掉這個方法
-    /*
-    initParticleSystem() {
-        if (document.getElementById('particles-js')) {
-            try {
-                particlesJS('particles-js', {
-                    particles: {
-                        number: { value: 50 },
-                        color: { value: '#ffff00' },
-                        shape: { type: 'circle' },
-                        opacity: { value: 0.5 },
-                        size: { value: 3 },
-                        move: {
-                            enable: true,
-                            speed: 2,
-                            direction: 'none',
-                            random: true
-                        }
-                    }
-                });
-            } catch (error) {
-                console.warn('⚠️ 無法初始化粒子系統:', error);
-            }
-        } else {
-            console.warn('⚠️ 找不到 particles-js 元素');
-        }
-    }
-    */
 
     showCollectionEffect(x, y) {
         // 使用 GSAP 創建爆炸效果
@@ -102,7 +72,7 @@ export class EffectSystem {
                 img.src = 'img/emo-sad.png';
                 break;
             case 'powerup':
-                img.src = 'img/emo-devil.png';
+                img.src = 'img/tool-star.png';
                 break;
             default:
                 img.src = 'img/emo-heart.png';

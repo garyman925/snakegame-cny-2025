@@ -14,7 +14,7 @@ export class ConfettiSystem {
             spread: 10,              // 很小的散布範圍
             startVelocity: 0,        // 初始速度為 0
             gravity: 0.4,            // 較輕的重力
-            drift: 0,                // 不要有橫向漂移
+            drift: 0.1,                // 不要有橫向漂移
             ticks: 1000,             // 較長的存在時間
             colors: ['#ffd700'],  // 紅色、金色和黃色
             shapes: ['square'],      // 方形紙碎
@@ -85,5 +85,14 @@ export class ConfettiSystem {
         setTimeout(() => {
             clearInterval(celebrationInterval);
         }, 2000);
+    }
+
+    playEndGameEffect() {
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#ff0000', '#ffa500', '#ffff00', '#008000', '#0000ff', '#4b0082', '#ee82ee']
+        });
     }
 } 

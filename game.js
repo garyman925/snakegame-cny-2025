@@ -153,12 +153,9 @@ class SnakeGame {
         // 檢測是否為移動設備
         this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         
-        // 設置畫布大小
+        // 設置畫布大小和 pixelSize
         this.setupCanvasSize();
         
-        // 根據設備類型設置大小
-        this.pixelSize = this.isMobile ? 30 : 50;
-
         // 初始化蛇的位置
         this.snake = [
             {x: this.pixelSize * 2, y: this.pixelSize},
@@ -1129,7 +1126,7 @@ class SnakeGame {
         }
         
         // 更新最終分數和統計資料
-        this.updateGameStats();
+        //this.updateGameStats();
         
         // 確保 gameResultSystem 存在
         if (!this.gameResultSystem) {
@@ -1732,7 +1729,7 @@ class SnakeGame {
         // 獲取視窗大小
         const windowWidth = window.innerWidth;
         const windowHeight = window.innerHeight;
-        const isSmallScreen = windowWidth <= 390;
+        const isSmallScreen = windowWidth <= 430;
 
         // 保存舊的 pixelSize
         const oldPixelSize = this.pixelSize;
@@ -2196,33 +2193,33 @@ class SnakeGame {
     }
 
     // 添加更新遊戲統計資料的方法
-    updateGameStats() {
-        // 現有的統計資料更新...
-        this.stats = {
-            ...this.stats,
-            finalScore: this.score,
-            maxCombo: this.comboSystem ? this.comboSystem.getMaxCombo() : 0,
-            completedWords: this.completedGreetings.length,
-            gameTime: Math.floor((Date.now() - this.startTime) / 1000)
-        };
+    // updateGameStats() {
+    //     // 現有的統計資料更新...
+    //     this.stats = {
+    //         ...this.stats,
+    //         finalScore: this.score,
+    //         maxCombo: this.comboSystem ? this.comboSystem.getMaxCombo() : 0,
+    //         completedWords: this.completedGreetings.length,
+    //         gameTime: Math.floor((Date.now() - this.startTime) / 1000)
+    //     };
         
         
-        // 更新 UI 顯示
-        const finalScoreElement = document.getElementById('finalScore');
-        const totalCollectedElement = document.getElementById('totalCollected');
-        const perfectCollectsElement = document.getElementById('perfectCollects');
-        const maxComboElement = document.getElementById('maxCombo');
+    //     // 更新 UI 顯示
+    //     const finalScoreElement = document.getElementById('finalScore');
+    //     const totalCollectedElement = document.getElementById('totalCollected');
+    //     const perfectCollectsElement = document.getElementById('perfectCollects');
+    //     const maxComboElement = document.getElementById('maxCombo');
 
         
-        if (finalScoreElement) finalScoreElement.textContent = this.score;
-        if (totalCollectedElement) totalCollectedElement.textContent = this.stats.totalCollected || 0;
-        if (perfectCollectsElement) perfectCollectsElement.textContent = this.stats.perfectCollects || 0;
-        if (maxComboElement) maxComboElement.textContent = this.stats.maxCombo || 0;
+    //     if (finalScoreElement) finalScoreElement.textContent = this.score;
+    //     if (totalCollectedElement) totalCollectedElement.textContent = this.stats.totalCollected || 0;
+    //     if (perfectCollectsElement) perfectCollectsElement.textContent = this.stats.perfectCollects || 0;
+    //     if (maxComboElement) maxComboElement.textContent = this.stats.maxCombo || 0;
         
         
-        console.log('遊戲統計資料已更新:', this.stats);
-        console.log('遊戲結束，最終分數:', this.score);
-    }
+    //     console.log('遊戲統計資料已更新:', this.stats);
+    //     console.log('遊戲結束，最終分數:', this.score);
+    // }
 
     startGame() {
         // ... 其他開始遊戲代碼 ...
