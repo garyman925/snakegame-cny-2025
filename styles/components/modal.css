@@ -216,7 +216,7 @@
 .ranking-content {
     position: relative;
     min-height: 200px;
-    max-height: 300px;
+    max-height: 53vh;
     overflow-y: auto;
 }
 
