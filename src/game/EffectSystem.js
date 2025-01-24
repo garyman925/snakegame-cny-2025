@@ -116,4 +116,54 @@ export class EffectSystem {
         const elapsed = Date.now() - this.glowStartTime;
         return elapsed < this.glowDuration;
     }
+
+    //當碰到正確食物時, 產生動畫
+    playCollectParticles(x, y) {
+        const particleCount = 10;
+        const colors = ['#00c748'];  // 綠色
+        
+        for (let i = 0; i < particleCount; i++) {
+            const angle = (i / particleCount) * Math.PI * 2;
+            const particle = document.createElement('div');
+            particle.className = 'collect-particle';
+            particle.style.left = `${x}px`;
+            particle.style.top = `${y}px`;
+            particle.style.backgroundColor = colors[0];
+            
+            // 正方形粒子
+            const size = Math.random() * 6 + 6;
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.borderRadius = '0';  // 確保是正方形
+            
+            document.body.appendChild(particle);
+
+            gsap.to(particle, {
+                x: Math.cos(angle) * (120 + Math.random() * 60),
+                y: Math.sin(angle) * (120 + Math.random() * 60),
+                scale: Math.random() * 0.8 + 0.5,
+                opacity: 0,
+                rotation: Math.random() * 720 - 360,  // 旋轉效果
+                duration: 1.2 + Math.random() * 0.6,
+                ease: 'power2.out',
+                onComplete: () => particle.remove()
+            });
+        }
+
+        // 中心爆炸效果
+        const burst = document.createElement('div');
+        burst.className = 'collect-burst';
+        burst.style.left = `${x}px`;
+        burst.style.top = `${y}px`;
+        document.body.appendChild(burst);
+
+        gsap.to(burst, {
+            scale: 10,
+            opacity: 0,
+            rotation: 45,  // 添加45度旋轉
+            duration: 1,
+            ease: 'power2.out',
+            onComplete: () => burst.remove()
+        });
+    }
 } 

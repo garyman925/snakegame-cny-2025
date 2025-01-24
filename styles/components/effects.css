@@ -331,4 +331,36 @@
     100% { filter: brightness(1); }
 } 
 
+/*Particle Effect*/
 
+.collect-particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 0;  /* 移除圓角，變成正方形 */
+    pointer-events: none;
+    z-index: 1000;
+    transform-origin: center;
+    will-change: transform, opacity;
+    filter: drop-shadow(0 0 8px rgba(0, 199, 72, 0.9));
+    mix-blend-mode: normal;
+}
+
+.collect-burst {
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border-radius: 0;  /* 移除圓角，變成正方形 */
+    background: radial-gradient(circle, 
+        rgba(0,199,72,1) 0%,
+        rgba(0,199,72,0.9) 20%,
+        rgba(0,199,72,0.8) 40%,
+        rgba(0,199,72,0.6) 60%,
+        rgba(0,199,72,0) 80%);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 999;
+    mix-blend-mode: screen;
+    filter: blur(3px);
+    box-shadow: 0 0 20px rgba(0, 199, 72, 0.8);
+}

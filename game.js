@@ -250,14 +250,14 @@ class SnakeGame {
         // 添加動畫相關屬性
         this.animationProgress = 0;
         this.lastPosition = null;
-        this.moveSpeed = 0.1;  // 基礎移動速度
+        this.moveSpeed = 0.05;  // 基礎移動速度
         
         // 修改遊戲循環的間隔時間，使動畫更流暢
         this.frameInterval = 1000/60; // 60fps 改為 30fps
 
         // 添加懲罰相關屬性
         this.isPenalized = false;
-        this.penaltyDuration = 500;  // 從 1000 改為 500 毫秒（0.5秒）停止移動
+        this.penaltyDuration = 200;  // 從 1000 改為 500 毫秒（0.5秒）停止移動
         this.transparentDuration = 1500;  // 從 3000 改為 1500 毫秒（1.5秒）透明處罰時間
         this.isTransparent = false;
 
@@ -1210,9 +1210,17 @@ class SnakeGame {
             if (Collider2D.boxCollision(headRect, foodRect)) {  // 使用 headRect
                 food.collected = true;
 
+                // 在收集到食物時播放粒子效果
+                if (this.effects) {
+                    this.effects.playCollectParticles(
+                        food.x + this.pixelSize / 2,  // 食物中心點
+                        food.y + this.pixelSize / 2
+                    );
+                }
+
                 // 播放收集音效
                 if (this.audio) {
-                    this.audio.playSound('collect');  // 添加這行
+                    this.audio.playSound('collect');
                 }
 
                 // 顯示正確表情
