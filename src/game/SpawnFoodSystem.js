@@ -1,3 +1,5 @@
+import { ScreenUtils } from '../utils/ScreenUtils.js';
+
 export class SpawnFoodSystem {
     constructor(game) {
         this.game = game;
@@ -14,45 +16,15 @@ export class SpawnFoodSystem {
 
     // 生成所有食物（包括正確和誘餌食物）
     spawnFood() {
-        // 添加日誌追蹤
-        console.log('開始生成食物:', {
-            當前題目: this.game.currentWords,
-            錯誤詞組: this.game.wrongWords
-        });
-
         // 清除現有的食物
         this.correctFoods = [];
         this.decoyFoods = [];
 
-        // 重新設置畫布大小以確保尺寸正確
+        // 重新設置畫布大小
         this.game.setupCanvasSize();
 
-        // 針對不同螢幕尺寸調整參數
-        const screenWidth = window.innerWidth;
-        const screenHeight = window.innerHeight;
-        const isSmallScreen = screenWidth <= 390;
-        
-        // 調整安全邊距和食物間距
-        const margin = isSmallScreen ? 
-            this.game.pixelSize * 1.5 : // 增加邊距
-            this.game.pixelSize * 2;
-        
-        const bottomMargin = isSmallScreen ? 
-            120 : // 增加底部邊距
-            150;
-        
-        const topMargin = isSmallScreen ? 
-            80 : // 增加頂部邊距
-            100;
-        
-        // 增加食物之間的最小距離
-        const minFoodDistance = isSmallScreen ?
-            this.game.pixelSize * 2.5 : // 增加食物間距
-            this.game.pixelSize * 3;
-
-        // 獲取 game-header 的實際高度
-        const header = document.querySelector('.game-header');
-        const headerHeight = header.getBoundingClientRect().height + topMargin;
+        const config = ScreenUtils.getScreenConfig();
+        const headerHeight = ScreenUtils.getHeaderHeight() + config.topMargin;
 
         // 用於存儲所有已放置的食物位置
         const placedFoods = [];
@@ -67,9 +39,9 @@ export class SpawnFoodSystem {
             while (!position && attempts < maxAttempts) {
                 position = this.findValidPosition(
                     placedFoods, 
-                    margin * 2,
+                    config.margin * 2,
                     headerHeight, 
-                    minFoodDistance
+                    config.minFoodDistance
                 );
                 attempts++;
             }
@@ -116,9 +88,9 @@ export class SpawnFoodSystem {
             while (!position && attempts < maxAttempts) {
                 position = this.findValidPosition(
                     placedFoods, 
-                    margin * 2,
+                    config.margin * 2,
                     headerHeight, 
-                    minFoodDistance
+                    config.minFoodDistance
                 );
                 attempts++;
             }

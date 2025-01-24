@@ -143,6 +143,7 @@ import { CollectWordSystem } from './src/game/CollectWordSystem.js';
 import { SpawnFoodSystem } from './src/game/SpawnFoodSystem.js';
 import { VirtualJoystickSystem } from './src/game/VirtualJoystickSystem.js';
 import { RuleSliderSystem } from './src/game/RuleSliderSystem.js';
+import { ScreenUtils } from './src/utils/ScreenUtils.js';
 
 class SnakeGame {
     constructor() {
@@ -1229,7 +1230,7 @@ class SnakeGame {
 
                 // 使用 CollectWordSystem 收集文字
                 this.collectWordSystem.collectWord(food.word, index);
-                this.triggerGlowEffect();
+
 
                 // 讓蛇變長
                 this.growSnake();
@@ -1726,34 +1727,23 @@ class SnakeGame {
 
     // 新增方法：設置畫布大小
     setupCanvasSize() {
-        // 獲取視窗大小
-        const windowWidth = window.innerWidth;
-        const windowHeight = window.innerHeight;
-        const isSmallScreen = windowWidth <= 430;
-
+        const config = ScreenUtils.getScreenConfig();
+        
         // 保存舊的 pixelSize
-        const oldPixelSize = this.pixelSize;
-
-        // 根據設備類型設置不同的像素大小
-        const newPixelSize = this.isMobile ? 
-            (isSmallScreen ? 
-                Math.min(windowWidth, windowHeight) * 0.08 : // 更小的手機螢幕
-                Math.min(windowWidth, windowHeight) * 0.1    // 一般手機螢幕
-            ) : 
-            Math.min(windowWidth, windowHeight) * 0.05;  // 電腦版的大小調小
-
+        const oldPixelSize = this.pixelSize;  // 添加這行
+        
         // 只在首次初始化或視窗大小真正改變時才更新 pixelSize
-        if (!this.pixelSize || Math.abs(this.pixelSize - newPixelSize) > 0.1) {
-            this.pixelSize = newPixelSize;
+        if (!this.pixelSize || Math.abs(this.pixelSize - config.pixelSize) > 0.1) {
+            this.pixelSize = config.pixelSize;
         }
 
-        // 設置畫布大小（只在真正需要時更新）
-        if (this.canvas.width !== windowWidth || this.canvas.height !== windowHeight) {
-            this.canvas.width = windowWidth;
-            this.canvas.height = windowHeight;
+        // 設置畫布大小
+        if (this.canvas.width !== config.windowWidth || this.canvas.height !== config.windowHeight) {
+            this.canvas.width = config.windowWidth;
+            this.canvas.height = config.windowHeight;
         }
 
-        // 只在 pixelSize 真正改變時才調整蛇的位置
+        // 調整蛇的位置
         if (this.snake && oldPixelSize !== this.pixelSize) {
             this.snake = this.snake.map(segment => ({
                 x: Math.round(segment.x / this.pixelSize) * this.pixelSize,
@@ -1762,11 +1752,6 @@ class SnakeGame {
         }
     }
 
-    // 添加發光效果
-    triggerGlowEffect() {
-        // this.glowEffect = true;
-        // this.glowStartTime = Date.now();
-    }
 
     // 添加分數彈出動畫
     showScorePopup(score, x, y) {
