@@ -250,7 +250,7 @@ class SnakeGame {
         // 添加動畫相關屬性
         this.animationProgress = 0;
         this.lastPosition = null;
-        this.moveSpeed = 0.05;  // 基礎移動速度
+        this.moveSpeed = 0.1;  // 基礎移動速度
         
         // 修改遊戲循環的間隔時間，使動畫更流暢
         this.frameInterval = 1000/60; // 60fps 改為 30fps

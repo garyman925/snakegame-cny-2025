@@ -31,6 +31,7 @@
     z-index: 1;
     background: #ff3737 url(../../img/flower.png);
     transition: all 0.5s ease;
+    z-index: 100;
 }
 
 .game-intro.hide {

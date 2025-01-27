@@ -10,8 +10,8 @@
 
 /* 遊戲開始前的狀態 */
 .game-header {
-    opacity: 0;
-    visibility: hidden;
+    opacity: 1;
+    visibility: visible;
     transition: opacity 0.5s ease, visibility 0.5s ease;
 }
 
@@ -26,21 +26,3 @@
     pointer-events: auto;
 }
 
-/* 遊戲開始後顯示所有遊戲相關元素 */
-.game-started .collected-words,
-.game-started .timer-container,
-.game-started .score-container {
-    opacity: 1;
-    visibility: visible;
-}
-
-/* 遊戲開始時隱藏介紹頁面 */
-.game-started .game-intro {
-    opacity: 0;
-    visibility: hidden;
-} 
-
-
-/* 遊戲規則 */
-
-   
